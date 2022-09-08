@@ -42,18 +42,18 @@ describe('Swap Module', () => {
 
   test('getResources', async () => {
     const address = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c'
-    const output = await sdk.Swap.getAllLPCoinResourcesByAddress(address)
+    const output = await sdk.swap.getAllLPCoinResourcesByAddress(address)
     console.log(output)
     expect(1).toBe(1)
   })
 
   test('getCoinInfo', async () => {
-    const output = await sdk.Swap.getCoinInfo(CoinsMapping.APTOS)
+    const output = await sdk.swap.getCoinInfo(CoinsMapping.APTOS)
     expect(output?.data.decimals).toBe(8)
   })
 
   test('checkPairExist', async () => {
-    const output = await sdk.Swap.checkPairExist({
+    const output = await sdk.swap.checkPairExist({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
     })
@@ -62,7 +62,7 @@ describe('Swap Module', () => {
   })
 
   test('checkPairExist', async () => {
-    const output = await sdk.Swap.checkPairExist({
+    const output = await sdk.swap.checkPairExist({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.OTHER,
     })
@@ -71,7 +71,7 @@ describe('Swap Module', () => {
   })
 
   test('calculateRates (test 1)', async () => {
-    const output = await sdk.Swap.calculateSwapRates({
+    const output = await sdk.swap.calculateSwapRates({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
       amount: convertToDecimals(1, 'APTOS'),
@@ -91,7 +91,7 @@ describe('Swap Module', () => {
 
   test('calculateRates (test 2)', async () => {
     console.log(convertToDecimals('0.00001', 'BTC'),)
-    const output = await sdk.Swap.calculateSwapRates({
+    const output = await sdk.swap.calculateSwapRates({
       fromCoin: CoinsMapping.BTC,
       toCoin: CoinsMapping.APTOS,
       amount: convertToDecimals('1', 'APTOS'),
@@ -111,7 +111,7 @@ describe('Swap Module', () => {
 
   test('createSwapTransactionPayload (coin_to_exact_coin)', async () => {
     console.log(convertToDecimals('0.001', 'BTC'))
-    const output = sdk.Swap.createSwapTransactionPayload({
+    const output = sdk.swap.createSwapTransactionPayload({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
       fromAmount: convertToDecimals('0.116831', 'APTOS'),
@@ -128,7 +128,7 @@ describe('Swap Module', () => {
 
   test('createSwapTransactionPayload (exact_coin_to_coin)', async () => {
     console.log(convertToDecimals('1', 'APTOS'))
-    const output = sdk.Swap.createSwapTransactionPayload({
+    const output = sdk.swap.createSwapTransactionPayload({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
       fromAmount: convertToDecimals('1', 'APTOS'),
@@ -144,7 +144,7 @@ describe('Swap Module', () => {
   })
 
   test('calculateAddLiquidityRates', async () => {
-    const output = await sdk.Swap.calculateAddLiquidityRates({
+    const output = await sdk.swap.calculateAddLiquidityRates({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       fixedCoin: 'X',
@@ -162,7 +162,7 @@ describe('Swap Module', () => {
 
   test('createAddLiquidityTransactionPayload', async () => {
     console.log(convertToDecimals('0.001', 'BTC'))
-    const output = sdk.Swap.createAddLiquidityTransactionPayload({
+    const output = sdk.swap.createAddLiquidityTransactionPayload({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amountX: convertToDecimals('0.116831', 'APTOS'),
@@ -177,7 +177,7 @@ describe('Swap Module', () => {
   })
 
   test('calculateRemoveLiquidityRates', async () => {
-    const output = await sdk.Swap.calculateRemoveLiquidityRates({
+    const output = await sdk.swap.calculateRemoveLiquidityRates({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amount: 1000,
@@ -189,7 +189,7 @@ describe('Swap Module', () => {
   })
 
   test('createRemoveLiquidityTransactionPayload', async () => {
-    const output = sdk.Swap.createRemoveLiquidityTransactionPayload({
+    const output = sdk.swap.createRemoveLiquidityTransactionPayload({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amount: 1000,

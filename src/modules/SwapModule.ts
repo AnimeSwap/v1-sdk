@@ -112,7 +112,7 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
     const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
     try {
-      await this.sdk.Resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
+      await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
       return true
     } catch (e) {
       return false
@@ -123,7 +123,7 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
     const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
-    const lp = await this.sdk.Resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
+    const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
 
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
@@ -187,7 +187,7 @@ export class SwapModule implements IModule {
     const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
     const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
 
-    const lp = await this.sdk.Resources.fetchAccountResource<SwapPoolResource>(
+    const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
       lpType
     )
@@ -252,12 +252,12 @@ export class SwapModule implements IModule {
     const lpType = composeLP(modules.DeployerAddress, params.fromCoin, params.toCoin)
     const SwapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
 
-    const task1 = this.sdk.Resources.fetchAccountResource<SwapPoolResource>(
+    const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
       lpType
     )
 
-    const task2 = this.sdk.Resources.fetchAccountResource<SwapPoolData>(
+    const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
       modules.DeployerAddress,
       SwapPoolDataType
     )
@@ -353,7 +353,7 @@ export class SwapModule implements IModule {
 
   async getCoinInfo(coin: AptosResourceType) {
     const { modules } = this.sdk.networkOptions
-    const coinInfo = await this.sdk.Resources.fetchAccountResource<AptosCoinInfoResource>(
+    const coinInfo = await this.sdk.resources.fetchAccountResource<AptosCoinInfoResource>(
       extractAddressFromType(coin),
       composeType(modules.CoinInfo, [coin])
     )
@@ -362,7 +362,7 @@ export class SwapModule implements IModule {
 
   async getAllLPCoinResourcesByAddress(address: AptosResourceType): Promise<lpCoinResource[]> {
     const { modules } = this.sdk.networkOptions
-    const resources = await this.sdk.Resources.fetchAccountResources<AptosCoinStoreResource>(
+    const resources = await this.sdk.resources.fetchAccountResources<AptosCoinStoreResource>(
       address
     )
     if (!resources) {

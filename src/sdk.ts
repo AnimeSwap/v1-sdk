@@ -23,11 +23,11 @@ export class SDK {
   protected _resources: ResourcesModule
   protected _networkOptions: SdkOptions['networkOptions']
 
-  get Swap() {
+  get swap() {
     return this._swap
   }
 
-  get Resources() {
+  get resources() {
     return this._resources
   }
 
