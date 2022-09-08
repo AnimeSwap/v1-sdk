@@ -1,4 +1,4 @@
-import { BigNumber } from 'types'
+import { BigNumber } from './common'
 import { AptosResourceType } from './aptos'
 
 export type SwapPoolResource = {

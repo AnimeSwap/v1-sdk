@@ -1,18 +1,18 @@
-import { SDK } from 'sdk'
-import { IModule } from 'interfaces/IModule'
+import { SDK } from '../sdk'
+import { IModule } from '../interfaces/IModule'
 import {
   AptosCoinInfoResource,
   AptosCoinStoreResource,
   AptosResourceType,
   Payload,
-} from 'types/aptos'
+} from '../types/aptos'
 import {
   SwapPoolResource,
   SwapPoolData,
-} from 'types/swap'
-import { BigNumber } from 'types'
-import { composeType, extractAddressFromType, isSortedSymbols, composeLPCoin, composeLP, composeSwapPoolData } from 'utils/contracts'
-import { d } from 'utils/numbers'
+} from '../types/swap'
+import { BigNumber } from '../types/common'
+import { composeType, extractAddressFromType, isSortedSymbols, composeLPCoin, composeLP, composeSwapPoolData } from '../utils/contracts'
+import { d } from '../utils/numbers'
 import Decimal from 'decimal.js'
 
 export type CalculateAddLiquidityParams = {

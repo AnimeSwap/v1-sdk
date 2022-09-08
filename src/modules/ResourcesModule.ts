@@ -1,7 +1,7 @@
-import { SDK } from 'sdk'
-import { IModule } from 'interfaces/IModule'
-import { AptosResource, AptosResourceType } from 'types/aptos'
-import { isAxiosError } from 'utils/is'
+import { SDK } from '../sdk'
+import { IModule } from '../interfaces/IModule'
+import { AptosResource, AptosResourceType } from '../types/aptos'
+import { isAxiosError } from '../utils/is'
 
 export class ResourcesModule implements IModule {
   protected _sdk: SDK

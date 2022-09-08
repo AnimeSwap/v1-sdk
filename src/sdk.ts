@@ -1,7 +1,7 @@
 import { AptosClient } from 'aptos'
-import { SwapModule } from 'modules/SwapModule'
-import { ResourcesModule } from 'modules/ResourcesModule'
-import { AptosResourceType } from 'types/aptos'
+import { SwapModule } from './modules/SwapModule'
+import { ResourcesModule } from './modules/ResourcesModule'
+import { AptosResourceType } from './types/aptos'
 
 export type SdkOptions = {
   nodeUrl: string

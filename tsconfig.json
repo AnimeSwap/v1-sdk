@@ -18,7 +18,6 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "sourceMap": true,
-    "baseUrl": "src",
     "outDir": "./dist/tsc/",
     "types": [
       "node",
