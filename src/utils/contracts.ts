@@ -1,5 +1,5 @@
-import { AptosResourceType } from 'types/aptos'
-import { checkAddress } from 'utils/hex'
+import { AptosResourceType } from '../types/aptos'
+import { checkAddress } from './hex'
 
 const EQUAL = 0
 const LESS_THAN = 1

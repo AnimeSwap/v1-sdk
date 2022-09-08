@@ -13,6 +13,7 @@ coverage
 .gitlab-ci.yml
 
 package-lock.json
+yarn-lock.json
 /*.tgz
 /tmp*
 /mnt/

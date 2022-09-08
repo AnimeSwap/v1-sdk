@@ -35,7 +35,7 @@ const sdk = new SDK({
   const APTOS = '0x1::aptos_coin::AptosCoin';
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
 
-  const output = await sdk.Swap.checkPairExist({
+  const output = await sdk.swap.checkPairExist({
     coinX: APTOS,
     coinY: BTC,
   })
@@ -53,7 +53,7 @@ const sdk = new SDK({
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
   const amountIn = 1e8;
 
-  const output = await sdk.Swap.calculateAddLiquidityRates({
+  const output = await sdk.swap.calculateAddLiquidityRates({
     coinX: APTOS,
     coinY: BTC,
     fixedCoin: 'X', // 'X' | 'Y'
@@ -70,7 +70,7 @@ const sdk = new SDK({
     }
    */
 
-  const txPayload = sdk.Swap.createAddLiquidityTransactionPayload({
+  const txPayload = sdk.swap.createAddLiquidityTransactionPayload({
     coinX: CoinsMapping.APTOS,
     coinY: CoinsMapping.BTC,
     amountX: amountIn,
@@ -92,7 +92,7 @@ const sdk = new SDK({
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
   const lpAmount = 1e6;
 
-  const output = await sdk.Swap.calculateRemoveLiquidityRates({
+  const output = await sdk.swap.calculateRemoveLiquidityRates({
     coinX: APTOS,
     coinY: BTC,
     amount: lpAmount,  // lp amount
@@ -106,7 +106,7 @@ const sdk = new SDK({
     }
    */
 
-  const txPayload = sdk.Swap.createRemoveLiquidityTransactionPayload({
+  const txPayload = sdk.swap.createRemoveLiquidityTransactionPayload({
     coinX: APTOS,
     coinY: BTC,
     amount: lpAmount,
@@ -129,7 +129,7 @@ const sdk = new SDK({
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
   const aptosAmount = 1e6;
 
-  const output = await sdk.Swap.calculateSwapRates({
+  const output = await sdk.swap.calculateSwapRates({
     fromCoin: APTOS,
     toCoin: BTC,
     amount: aptosAmount,
@@ -148,7 +148,7 @@ const sdk = new SDK({
     }
    */
 
-  const txPayload = sdk.Swap.createSwapTransactionPayload({
+  const txPayload = sdk.swap.createSwapTransactionPayload({
     fromCoin: APTOS,
     toCoin: BTC,
     fromAmount: aptosAmount,
@@ -172,7 +172,7 @@ const sdk = new SDK({
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
   const btcAmount = 1e6;
 
-  const output = await sdk.Swap.calculateSwapRates({
+  const output = await sdk.swap.calculateSwapRates({
     fromCoin: APTOS,
     toCoin: BTC,
     amount: btcAmount,
@@ -191,7 +191,7 @@ const sdk = new SDK({
     }
    */
 
-  const txPayload = sdk.Swap.createSwapTransactionPayload({
+  const txPayload = sdk.swap.createSwapTransactionPayload({
     fromCoin: APTOS,
     toCoin: BTC,
     fromAmount: output.amount,

@@ -1,7 +1,7 @@
 import { AptosClient } from 'aptos'
-import { SwapModule } from 'modules/SwapModule'
-import { ResourcesModule } from 'modules/ResourcesModule'
-import { AptosResourceType } from 'types/aptos'
+import { SwapModule } from './modules/SwapModule'
+import { ResourcesModule } from './modules/ResourcesModule'
+import { AptosResourceType } from './types/aptos'
 
 export type SdkOptions = {
   nodeUrl: string
@@ -23,11 +23,11 @@ export class SDK {
   protected _resources: ResourcesModule
   protected _networkOptions: SdkOptions['networkOptions']
 
-  get Swap() {
+  get swap() {
     return this._swap
   }
 
-  get Resources() {
+  get resources() {
     return this._resources
   }
 
