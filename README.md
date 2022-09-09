@@ -11,7 +11,7 @@ The typescript SDK for [AnimeSwap](https://animeswap.org) v1 protocol.
 
 # Installation
 
-    yarn add @animeswap.org/v1-sdk
+    yarn add "@animeswap.org/v1-sdk"
 
 # Usage Example
 ### Init SDK
@@ -39,7 +39,7 @@ const sdk = new SDK({
   const APTOS = '0x1::aptos_coin::AptosCoin'
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
 
-  const output: boolean = await sdk.swap.isPairExist(APTOS, BTC)
+  const output = await sdk.swap.isPairExist(APTOS, BTC)
 })()
 ```
 
@@ -49,7 +49,7 @@ const sdk = new SDK({
   const APTOS = '0x1::aptos_coin::AptosCoin'
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
 
-  const isPairExist: boolean = await sdk.swap.isPairExist(APTOS, BTC)
+  const isPairExist = await sdk.swap.isPairExist(APTOS, BTC)
 
   if (isPairExist) {
     // Add liqudity with a given rate
