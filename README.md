@@ -1,17 +1,22 @@
 # AnimeSwap v1 Protocol SDK
 
+[![Lint and Test](https://github.com/AnimeSwap/v1-sdk/actions/workflows/lint-and-test.yml/badge.svg)](https://github.com/AnimeSwap/v1-sdk/actions/workflows/lint-and-test.yml/badge.svg)
+[![npm version](https://img.shields.io/npm/v/@animeswap.org/v1-sdk/latest.svg)](https://img.shields.io/npm/v/@animeswap.org/v1-sdk/latest.svg)
+[![npm bundle size](https://img.shields.io/bundlephobia/minzip/@animeswap.org/v1-sdk/latest.svg)](https://img.shields.io/bundlephobia/minzip/@animeswap.org/v1-sdk/latest.svg)
+[![downloads](https://img.shields.io/npm/dm/@animeswap.org/v1-sdk)](https://img.shields.io/npm/dm/@animeswap.org/v1-sdk)
+
 The typescript SDK for [AnimeSwap](https://animeswap.org) v1 protocol.
 
 [SDK documents](https://docs.animeswap.org)
 
 # Installation
 
-    yarn add @animeswap/v1-sdk
+    yarn add @animeswap.org/v1-sdk
 
 # Usage Example
 ### Init SDK
 ```typescript
-import { SDK } from '@animeswap/v1-sdk';
+import { SDK } from '@animeswap.org/v1-sdk';
 
 const sdk = new SDK({
   nodeUrl: 'https://fullnode.devnet.aptoslabs.com', // Node URL
