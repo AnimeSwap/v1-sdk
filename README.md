@@ -11,12 +11,12 @@ The typescript SDK for [AnimeSwap](https://animeswap.org) v1 protocol.
 
 # Installation
 
-    yarn add @animeswap/v1-sdk
+    yarn add @animeswap.org/v1-sdk
 
 # Usage Example
 ### Init SDK
 ```typescript
-import { SDK } from '@animeswap/v1-sdk';
+import { SDK } from '@animeswap.org/v1-sdk';
 
 const sdk = new SDK({
   nodeUrl: 'https://fullnode.devnet.aptoslabs.com', // Node URL
