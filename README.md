@@ -21,14 +21,13 @@ import { SDK } from '@animeswap.org/v1-sdk';
 const sdk = new SDK({
   nodeUrl: 'https://fullnode.devnet.aptoslabs.com', // Node URL
   networkOptions: {
-    nativeToken: '0x1::test_coin::TestCoin', // Type of Native network token
+    nativeToken: '0x1::aptos_coin::AptosCoin', // Type of Native network token
     modules: {
-      Scripts:
-        '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::DemoAnimeSwapPoolV1', // This module is used for Swap
+      Scripts: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2::AnimeSwapPoolV1', // This module is used for Swap
       CoinInfo: '0x1::coin::CoinInfo', // Type of base CoinInfo module
       CoinStore: '0x1::coin::CoinStore', // Type of base CoinStore module
-      DeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',  // Swap deployer address
-      ResourceAccountAddress: '0xab5a6ebb67f16253bf7718c53bc43a65aef150fb1040f75ad587c0ea8434d277', // Swap resource account address
+      DeployerAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2',  // Swap deployer address
+      ResourceAccountAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2', // Swap resource account address
     },
   }
 })
@@ -159,6 +158,7 @@ const sdk = new SDK({
     fromAmount: aptosAmount,
     toAmount: output.amount,
     fixedCoin: 'from',  // fixed input coin
+    toAddress: '0xA1ice', // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,     // 5%
     deadline: 20,       // 20 minutes
   })
@@ -202,6 +202,7 @@ const sdk = new SDK({
     fromAmount: output.amount,
     toAmount: btcAmount,
     fixedCoin: 'to',  // fixed output coin
+    toAddress: '0xA1ice', // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,   // 5%
     deadline: 20,     // 20 minutes
   })

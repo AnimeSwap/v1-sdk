@@ -11,7 +11,15 @@ import {
   SwapPoolData,
 } from '../types/swap'
 import { BigNumber } from '../types/common'
-import { composeType, extractAddressFromType, isSortedSymbols, composeLPCoin, composeLP, composeSwapPoolData } from '../utils/contracts'
+import {
+  composeType,
+  extractAddressFromType,
+  isSortedSymbols,
+  composeLPCoin,
+  composeLP,
+  composeLPCoinType,
+  composeSwapPoolData,
+} from '../utils/contracts'
 import { d } from '../utils/numbers'
 import Decimal from 'decimal.js'
 
@@ -81,6 +89,7 @@ export type CreateTXPayloadParams = {
   fromAmount: BigNumber
   toAmount: BigNumber
   fixedCoin: 'from' | 'to'
+  toAddress: AptosResourceType
   slippage: number
   deadline: number // minutes
 }
@@ -322,7 +331,7 @@ export class SwapModule implements IModule {
 
     const functionName = composeType(
       modules.Scripts,
-      params.fixedCoin === 'from' ? 'swap_exact_tokens_for_tokens_entry' : 'swap_tokens_for_exact_tokens_entry'
+      params.fixedCoin === 'from' ? 'swap_exact_coins_for_coins_entry' : 'swap_coins_for_exact_coins_entry'
     )
 
     const typeArguments = [
@@ -341,7 +350,7 @@ export class SwapModule implements IModule {
 
     const deadline = Math.floor(Date.now() / 1000) + params.deadline * 60
 
-    const args = [modules.ResourceAccountAddress, d(fromAmount).toString(), d(toAmount).toString(), d(deadline).toString()]
+    const args = [modules.ResourceAccountAddress, d(fromAmount).toString(), d(toAmount).toString(), params.toAddress, d(deadline).toString()]
 
     return {
       type: 'entry_function_payload',
@@ -368,7 +377,7 @@ export class SwapModule implements IModule {
     if (!resources) {
       throw new Error(`resources (${resources}) not found`)
     }
-    const lpCoinType = composeType(modules.DeployerAddress, 'DemoLPTokenV1', 'LPToken')
+    const lpCoinType = composeLPCoinType(modules.DeployerAddress)
     const regexStr = modules.CoinStore + '<(' + lpCoinType + '<(.+), ?(.+)>)>'
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
