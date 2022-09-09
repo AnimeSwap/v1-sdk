@@ -1,6 +1,6 @@
 {
   "name": "@animeswap.org/v1-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SDK for use any functions of AnimeSwap v1 Protocol",
   "repository": "https://github.com/AnimeSwap/v1-sdk",
   "license": "GPL-3.0-or-later",
