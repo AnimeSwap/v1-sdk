@@ -92,6 +92,10 @@ export function composeSwapPoolData(address: string) {
   return composeType(address, 'AnimeSwapPoolV1', 'AdminData')
 }
 
+export function composeCoinStore(coinStore: string, lpCoinType: string) {
+  return `${coinStore}<${lpCoinType}>`
+}
+
 export function extractAddressFromType(type: string) {
   return type.split('::')[0]
 }

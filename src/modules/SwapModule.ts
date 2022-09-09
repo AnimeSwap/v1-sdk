@@ -19,6 +19,7 @@ import {
   composeLP,
   composeLPCoinType,
   composeSwapPoolData,
+  composeCoinStore,
 } from '../utils/contracts'
 import { d } from '../utils/numbers'
 import Decimal from 'decimal.js'
@@ -94,17 +95,23 @@ export type CreateTXPayloadParams = {
   deadline: number // minutes
 }
 
-export type checkPairExistParams = {
+export type CheckPairExistParams = {
   coinX: AptosResourceType
   coinY: AptosResourceType
 }
 
-export type lpCoinResource = {
+export type LPCoinResource = {
   coinX: AptosResourceType
   coinY: AptosResourceType
   lpCoin: AptosResourceType
   value: string
 } | null
+
+export type LPCoinParams = {
+  address: AptosResourceType
+  coinX: AptosResourceType
+  coinY: AptosResourceType
+}
 
 export class SwapModule implements IModule {
   protected _sdk: SDK
@@ -117,7 +124,7 @@ export class SwapModule implements IModule {
     this._sdk = sdk
   }
 
-  async checkPairExist(params: checkPairExistParams): Promise<boolean> {
+  async checkPairExist(params: CheckPairExistParams): Promise<boolean> {
     const { modules } = this.sdk.networkOptions
     const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
     try {
@@ -369,7 +376,7 @@ export class SwapModule implements IModule {
     return coinInfo
   }
 
-  async getAllLPCoinResourcesByAddress(address: AptosResourceType): Promise<lpCoinResource[]> {
+  async getAllLPCoinResourcesByAddress(address: AptosResourceType): Promise<LPCoinResource[]> {
     const { modules } = this.sdk.networkOptions
     const resources = await this.sdk.resources.fetchAccountResources<AptosCoinStoreResource>(
       address
@@ -394,6 +401,28 @@ export class SwapModule implements IModule {
       throw new Error(`filteredResource (${filteredResource}) not found`)
     }
     return filteredResource
+  }
+
+  async getLPCoinAmount(params: LPCoinParams) : Promise<LPCoinResource> {
+    const { modules } = this.sdk.networkOptions
+    const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
+    const coinStoreLP = composeCoinStore(modules.CoinStore, lpCoin)
+
+    const lpCoinStore = await this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(
+      params.address,
+      coinStoreLP,
+    )
+
+    if (!lpCoinStore) {
+      throw new Error(`LPCoin (${coinStoreLP}) not found`)
+    }
+
+    return {
+      coinX: params.coinX,
+      coinY: params.coinY,
+      lpCoin: lpCoin,
+      value: lpCoinStore.data.coin.value,
+    }
   }
 }
 
