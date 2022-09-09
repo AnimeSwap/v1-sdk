@@ -52,6 +52,16 @@ describe('Swap Module', () => {
     expect(output?.data.decimals).toBe(8)
   })
 
+  test('getLPCoinAmount', async () => {
+    const output = await sdk.swap.getLPCoinAmount({
+      address: sdk.networkOptions.modules.ResourceAccountAddress,
+      coinX: CoinsMapping.APTOS,
+      coinY: CoinsMapping.BTC,
+    })
+    const value = (output?.value) as unknown as number
+    expect(+value).toBeGreaterThanOrEqual(1000)
+  })
+
   test('checkPairExist', async () => {
     const output = await sdk.swap.checkPairExist({
       coinX: CoinsMapping.APTOS,
