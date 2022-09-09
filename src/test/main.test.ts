@@ -3,9 +3,11 @@ import { d, decimalsMultiplier } from '../utils/numbers'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
-  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::DemoTestCoinsV1::BTC',
+  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC',
   OTHER: '0x43417434fd869edee76cca2a4d2301e528a1551b1d719b75c350c3c97d15b8b9::coins::BTC',
 }
+
+const SenderAddress = '0xa1ice'
 
 const CoinInfo: { [key: string]: { decimals: number } } = {
   APTOS: { decimals: 6 },
@@ -30,12 +32,11 @@ describe('Swap Module', () => {
     networkOptions: {
       nativeCoin: '0x1::aptos_coin::AptosCoin',
       modules: {
-        Scripts:
-          '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::DemoAnimeSwapPoolV1',
+        Scripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeSwapPoolV1',
         CoinInfo: '0x1::coin::CoinInfo',
         CoinStore: '0x1::coin::CoinStore',
-        DeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
-        ResourceAccountAddress: '0xab5a6ebb67f16253bf7718c53bc43a65aef150fb1040f75ad587c0ea8434d277',
+        DeployerAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2',
+        ResourceAccountAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2',
       },
     },
   })
@@ -117,6 +118,7 @@ describe('Swap Module', () => {
       fromAmount: convertToDecimals('0.116831', 'APTOS'),
       toAmount: convertToDecimals('0.001', 'BTC'),
       fixedCoin: 'to',
+      toAddress: SenderAddress,
       slippage: 0.05,
       deadline: 20,
     })
@@ -134,6 +136,7 @@ describe('Swap Module', () => {
       fromAmount: convertToDecimals('1', 'APTOS'),
       toAmount: convertToDecimals('0.01584723', 'BTC'),
       fixedCoin: 'from',
+      toAddress: SenderAddress,
       slippage: 0.05,
       deadline: 20,
     })

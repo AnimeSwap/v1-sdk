@@ -68,24 +68,28 @@ export function composeType(address: string, ...args: unknown[]): AptosResourceT
 export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
   const isSorted = isSortedSymbols(coin_x, coin_y)
   if (isSorted) {
-    return composeType(address, 'DemoLPTokenV1', 'LPToken', [coin_x, coin_y])
+    return composeType(address, 'LPCoinV1', 'LPCoin', [coin_x, coin_y])
   } else {
-    return composeType(address, 'DemoLPTokenV1', 'LPToken', [coin_y, coin_x])
+    return composeType(address, 'LPCoinV1', 'LPCoin', [coin_y, coin_x])
   }
 }
 
 export function composeLP(address: string, coin_x: string, coin_y: string) {
   const isSorted = isSortedSymbols(coin_x, coin_y)
-  const lpToken = composeLPCoin(address, coin_x, coin_y)
+  const lpCoin = composeLPCoin(address, coin_x, coin_y)
   if (isSorted) {
-    return composeType(address, 'DemoAnimeSwapPoolV1', 'LiquidityPool', [coin_x, coin_y, lpToken])
+    return composeType(address, 'AnimeSwapPoolV1', 'LiquidityPool', [coin_x, coin_y, lpCoin])
   } else {
-    return composeType(address, 'DemoAnimeSwapPoolV1', 'LiquidityPool', [coin_y, coin_x, lpToken])
+    return composeType(address, 'AnimeSwapPoolV1', 'LiquidityPool', [coin_y, coin_x, lpCoin])
   }
 }
 
+export function composeLPCoinType(address: string) {
+  return composeType(address, 'LPCoinV1', 'LPCoin')
+}
+
 export function composeSwapPoolData(address: string) {
-  return composeType(address, 'DemoAnimeSwapPoolV1', 'PairAdmin')
+  return composeType(address, 'AnimeSwapPoolV1', 'AdminData')
 }
 
 export function extractAddressFromType(type: string) {
