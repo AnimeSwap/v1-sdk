@@ -50,42 +50,64 @@ const sdk = new SDK({
 })()
 ```
 
-### Add liquidity rate calculation and tx payload for existed pairs
+### Add liquidity rate calculation and tx payload. If pair not exists, tx will create pair first
 ```typescript
 (async () => {
   const APTOS = '0x1::aptos_coin::AptosCoin';
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
-  const amountIn = 1e8;
 
-  const output = await sdk.swap.calculateAddLiquidityRates({
+  const isPairExist = await sdk.swap.checkPairExist({
     coinX: APTOS,
     coinY: BTC,
-    fixedCoin: 'X', // 'X' | 'Y'
-    amount: amountIn,  // fixedCoin amount
-  });
-
-  /**
-    output type:
-    {
-      amount: string
-      coinXDivCoinY: string
-      coinYDivCoinX: string
-      shareOfPool: string
-    }
-   */
-
-  const txPayload = sdk.swap.createAddLiquidityTransactionPayload({
-    coinX: CoinsMapping.APTOS,
-    coinY: CoinsMapping.BTC,
-    amountX: amountIn,
-    amountY: output.amount,
-    slippage: 0.05, // 5%
-    deadline: 20,   // 20 minutes
   })
 
-  /**
-    output type: tx payload
-   */
+  if (isPairExist) {
+    // Add liqudity with a given rate
+    const amountIn = 1e8;
+    const output = await sdk.swap.calculateAddLiquidityRates({
+      coinX: APTOS,
+      coinY: BTC,
+      fixedCoin: 'X', // 'X' | 'Y'
+      amount: amountIn,  // fixedCoin amount
+    });
+
+    /**
+      output type:
+      {
+        amount: string
+        coinXDivCoinY: string
+        coinYDivCoinX: string
+        shareOfPool: string
+      }
+    */
+
+    const txPayload = sdk.swap.createAddLiquidityTransactionPayload({
+      coinX: CoinsMapping.APTOS,
+      coinY: CoinsMapping.BTC,
+      amountX: amountIn,
+      amountY: output.amount,
+      slippage: 0.05, // 5%
+      deadline: 20,   // 20 minutes
+    })
+
+    /**
+      output type: tx payload
+    */
+  } else {
+    // Create pair and add initial liquidity
+    const txPayload = sdk.swap.createAddLiquidityTransactionPayload({
+      coinX: CoinsMapping.APTOS,
+      coinY: CoinsMapping.BTC,
+      amountX: 1e8, // any amount you want
+      amountY: 1e7, // any amount you want
+      slippage: 0.05, // 5%
+      deadline: 20,   // 20 minutes
+    })
+
+    /**
+      output type: tx payload
+    */
+  }
 })()
 ```
 
@@ -158,7 +180,7 @@ const sdk = new SDK({
     fromAmount: aptosAmount,
     toAmount: output.amount,
     fixedCoin: 'from',  // fixed input coin
-    toAddress: '0xA1ice', // receive `toCoin` address. In the most case, should be the same as sender address
+    toAddress: '0xA11ce', // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,     // 5%
     deadline: 20,       // 20 minutes
   })
@@ -202,7 +224,7 @@ const sdk = new SDK({
     fromAmount: output.amount,
     toAmount: btcAmount,
     fixedCoin: 'to',  // fixed output coin
-    toAddress: '0xA1ice', // receive `toCoin` address. In the most case, should be the same as sender address
+    toAddress: '0xA11ce', // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,   // 5%
     deadline: 20,     // 20 minutes
   })

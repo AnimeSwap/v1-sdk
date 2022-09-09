@@ -4,7 +4,6 @@ import { d, decimalsMultiplier } from '../utils/numbers'
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
   BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC',
-  OTHER: '0x43417434fd869edee76cca2a4d2301e528a1551b1d719b75c350c3c97d15b8b9::coins::BTC',
 }
 
 const SenderAddress = '0xa1ice'
@@ -32,7 +31,7 @@ describe('Swap Module', () => {
     networkOptions: {
       nativeCoin: '0x1::aptos_coin::AptosCoin',
       modules: {
-        Scripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeSwapPoolV1',
+        Scripts: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2::AnimeSwapPoolV1',
         CoinInfo: '0x1::coin::CoinInfo',
         CoinStore: '0x1::coin::CoinStore',
         DeployerAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2',
@@ -60,15 +59,6 @@ describe('Swap Module', () => {
     })
 
     expect(output).toBe(true)
-  })
-
-  test('checkPairExist', async () => {
-    const output = await sdk.swap.checkPairExist({
-      coinX: CoinsMapping.APTOS,
-      coinY: CoinsMapping.OTHER,
-    })
-
-    expect(output).toBe(false)
   })
 
   test('calculateRates (test 1)', async () => {
