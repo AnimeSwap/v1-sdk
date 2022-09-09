@@ -33,55 +33,45 @@ const sdk = new SDK({
 })
 ```
 
-### Check whether pair exist
+### Is pair exist
 ```typescript
 (async () => {
-  const APTOS = '0x1::aptos_coin::AptosCoin';
-  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
+  const APTOS = '0x1::aptos_coin::AptosCoin'
+  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
 
-  const output = await sdk.swap.checkPairExist({
-    coinX: APTOS,
-    coinY: BTC,
-  })
-
-  /**
-    output type: bool
-   */
+  const output: boolean = await sdk.swap.isPairExist(APTOS, BTC)
 })()
 ```
 
 ### Add liquidity rate calculation and tx payload. If pair not exists, tx will create pair first
 ```typescript
 (async () => {
-  const APTOS = '0x1::aptos_coin::AptosCoin';
-  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
+  const APTOS = '0x1::aptos_coin::AptosCoin'
+  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
 
-  const isPairExist = await sdk.swap.checkPairExist({
-    coinX: APTOS,
-    coinY: BTC,
-  })
+  const isPairExist: boolean = await sdk.swap.isPairExist(APTOS, BTC)
 
   if (isPairExist) {
     // Add liqudity with a given rate
-    const amountIn = 1e8;
-    const output = await sdk.swap.calculateAddLiquidityRates({
+    const amountIn = 1e8
+    const output = await sdk.swap.addLiquidityRates({
       coinX: APTOS,
       coinY: BTC,
       fixedCoin: 'X', // 'X' | 'Y'
       amount: amountIn,  // fixedCoin amount
-    });
+    })
 
     /**
       output type:
       {
-        amount: string
-        coinXDivCoinY: string
-        coinYDivCoinX: string
-        shareOfPool: string
+        amount: Decimal
+        coinXDivCoinY: Decimal
+        coinYDivCoinX: Decimal
+        shareOfPool: Decimal
       }
     */
 
-    const txPayload = sdk.swap.createAddLiquidityTransactionPayload({
+    const txPayload = sdk.swap.addLiquidityPayload({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amountX: amountIn,
@@ -95,7 +85,7 @@ const sdk = new SDK({
     */
   } else {
     // Create pair and add initial liquidity
-    const txPayload = sdk.swap.createAddLiquidityTransactionPayload({
+    const txPayload = sdk.swap.addLiquidityPayload({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amountX: 1e8, // any amount you want
@@ -114,11 +104,11 @@ const sdk = new SDK({
 ### Remove liquidity rate calculation and tx payload for existed pairs
 ```typescript
 (async () => {
-  const APTOS = '0x1::aptos_coin::AptosCoin';
-  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
-  const lpAmount = 1e6;
+  const APTOS = '0x1::aptos_coin::AptosCoin'
+  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
+  const lpAmount = 1e6
 
-  const output = await sdk.swap.calculateRemoveLiquidityRates({
+  const output = await sdk.swap.removeLiquidityRates({
     coinX: APTOS,
     coinY: BTC,
     amount: lpAmount,  // lp amount
@@ -127,12 +117,12 @@ const sdk = new SDK({
   /**
     output type:
     {
-      amountX: string
-      amountY: string
+      amountX: Decimal
+      amountY: Decimal
     }
    */
 
-  const txPayload = sdk.swap.createRemoveLiquidityTransactionPayload({
+  const txPayload = sdk.swap.removeLiquidityPayload({
     coinX: APTOS,
     coinY: BTC,
     amount: lpAmount,
@@ -151,11 +141,11 @@ const sdk = new SDK({
 ### Swap (exact in) rate calculation and tx payload. Swap exact coin to coin mode
 ```typescript
 (async () => {
-  const APTOS = '0x1::aptos_coin::AptosCoin';
-  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
-  const aptosAmount = 1e6;
+  const APTOS = '0x1::aptos_coin::AptosCoin'
+  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
+  const aptosAmount = 1e6
 
-  const output = await sdk.swap.calculateSwapRates({
+  const output = await sdk.swap.swapRates({
     fromCoin: APTOS,
     toCoin: BTC,
     amount: aptosAmount,
@@ -166,15 +156,15 @@ const sdk = new SDK({
   /**
     output type:
     {
-      amount: string
-      amountWithSlippage: string
-      priceImpact: string
-      coinFromDivCoinTo: string
-      coinToDivCoinFrom: string
+      amount: Decimal
+      amountWithSlippage: Decimal
+      priceImpact: Decimal
+      coinFromDivCoinTo: Decimal
+      coinToDivCoinFrom: Decimal
     }
    */
 
-  const txPayload = sdk.swap.createSwapTransactionPayload({
+  const txPayload = sdk.swap.swapPayload({
     fromCoin: APTOS,
     toCoin: BTC,
     fromAmount: aptosAmount,
@@ -195,30 +185,30 @@ const sdk = new SDK({
 ### Swap (exact out) rate calculation and tx payload. Swap coin to exact coin mode
 ```typescript
 (async () => {
-  const APTOS = '0x1::aptos_coin::AptosCoin';
-  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
-  const btcAmount = 1e6;
+  const APTOS = '0x1::aptos_coin::AptosCoin'
+  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
+  const btcAmount = 1e6
 
-  const output = await sdk.swap.calculateSwapRates({
+  const output = await sdk.swap.swapRates({
     fromCoin: APTOS,
     toCoin: BTC,
     amount: btcAmount,
     fixedCoin: 'to',  // fixed output coin
     slippage: 0.05,   // 5%
-  });
+  })
 
   /**
     output type:
     {
-      amount: string
-      amountWithSlippage: string
-      priceImpact: string
-      coinFromDivCoinTo: string
-      coinToDivCoinFrom: string
+      amount: Decimal
+      amountWithSlippage: Decimal
+      priceImpact: Decimal
+      coinFromDivCoinTo: Decimal
+      coinToDivCoinFrom: Decimal
     }
    */
 
-  const txPayload = sdk.swap.createSwapTransactionPayload({
+  const txPayload = sdk.swap.swapPayload({
     fromCoin: APTOS,
     toCoin: BTC,
     fromAmount: output.amount,
@@ -238,9 +228,9 @@ const sdk = new SDK({
 ### Get LPCoin amount
 ```typescript
 (async () => {
-  const APTOS = '0x1::aptos_coin::AptosCoin';
-  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC';
-  const queryAddress = '0xA11ce';
+  const APTOS = '0x1::aptos_coin::AptosCoin'
+  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
+  const queryAddress = '0xA11ce'
 
   const output = await sdk.swap.getLPCoinAmount({
     address: queryAddress,

@@ -1,6 +1,7 @@
 import { SDK } from '../sdk'
 import { IModule } from '../interfaces/IModule'
 import {
+  address,
   AptosCoinInfoResource,
   AptosCoinStoreResource,
   AptosResourceType,
@@ -20,25 +21,25 @@ import {
   composeLPCoinType,
   composeSwapPoolData,
   composeCoinStore,
-} from '../utils/contracts'
-import { d } from '../utils/numbers'
+} from '../utils/contract'
+import { d } from '../utils/number'
 import Decimal from 'decimal.js'
 
-export type CalculateAddLiquidityParams = {
+export type AddLiquidityParams = {
   coinX: AptosResourceType
   coinY: AptosResourceType
   amount: BigNumber
   fixedCoin: 'X' | 'Y'
 }
 
-export type CalculateAddLiquidityReturn = {
-  amount: string
-  coinXDivCoinY: string
-  coinYDivCoinX: string
-  shareOfPool: string
+export type AddLiquidityReturn = {
+  amount: Decimal
+  coinXDivCoinY: Decimal
+  coinYDivCoinX: Decimal
+  shareOfPool: Decimal
 }
 
-export type CreateAddLiquidityTransactionPayload = {
+export type AddLiquidityPayload = {
   coinX: AptosResourceType
   coinY: AptosResourceType
   amountX: BigNumber
@@ -47,18 +48,18 @@ export type CreateAddLiquidityTransactionPayload = {
   deadline: number // minutes
 }
 
-export type CalculateRemoveLiquidityParams = {
+export type RemoveLiquidityParams = {
   coinX: AptosResourceType
   coinY: AptosResourceType
   amount: BigNumber
 }
 
-export type CalculateRemoveLiquidityReturn = {
-  amountX: string
-  amountY: string
+export type RemoveLiquidityReturn = {
+  amountX: Decimal
+  amountY: Decimal
 }
 
-export type CreateRemoveLiquidityTransactionPayload = {
+export type RemoveLiquidityPayload = {
   coinX: AptosResourceType
   coinY: AptosResourceType
   amount: BigNumber
@@ -68,7 +69,7 @@ export type CreateRemoveLiquidityTransactionPayload = {
   deadline: number // minutes
 }
 
-export type CalculateRatesParams = {
+export type SwapRatesParams = {
   fromCoin: AptosResourceType
   toCoin: AptosResourceType
   amount: BigNumber
@@ -76,15 +77,15 @@ export type CalculateRatesParams = {
   slippage: number
 }
 
-export type CalculateRatesReturn = {
-  amount: string
-  amountWithSlippage: string
-  priceImpact: string
-  coinFromDivCoinTo: string
-  coinToDivCoinFrom: string
+export type SwapRatesReturn = {
+  amount: Decimal
+  amountWithSlippage: Decimal
+  priceImpact: Decimal
+  coinFromDivCoinTo: Decimal
+  coinToDivCoinFrom: Decimal
 }
 
-export type CreateTXPayloadParams = {
+export type SwapPayload = {
   fromCoin: AptosResourceType
   toCoin: AptosResourceType
   fromAmount: BigNumber
@@ -95,11 +96,6 @@ export type CreateTXPayloadParams = {
   deadline: number // minutes
 }
 
-export type CheckPairExistParams = {
-  coinX: AptosResourceType
-  coinY: AptosResourceType
-}
-
 export type LPCoinResource = {
   coinX: AptosResourceType
   coinY: AptosResourceType
@@ -108,7 +104,7 @@ export type LPCoinResource = {
 } | null
 
 export type LPCoinParams = {
-  address: AptosResourceType
+  address: address
   coinX: AptosResourceType
   coinY: AptosResourceType
 }
@@ -124,9 +120,9 @@ export class SwapModule implements IModule {
     this._sdk = sdk
   }
 
-  async checkPairExist(params: CheckPairExistParams): Promise<boolean> {
+  async isPairExist(coinX: AptosResourceType, coinY: AptosResourceType): Promise<boolean> {
     const { modules } = this.sdk.networkOptions
-    const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
+    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
     try {
       await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
       return true
@@ -135,7 +131,7 @@ export class SwapModule implements IModule {
     }
   }
 
-  async calculateAddLiquidityRates(params: CalculateAddLiquidityParams): Promise<CalculateAddLiquidityReturn> {
+  async addLiquidityRates(params: AddLiquidityParams): Promise<AddLiquidityReturn> {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
     const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
@@ -158,14 +154,14 @@ export class SwapModule implements IModule {
         : quote(d(params.amount), reserveY, reserveX)
 
     return {
-      amount: outputAmount.toString(),
-      coinXDivCoinY: reserveX.div(reserveY).toString(),
-      coinYDivCoinX: reserveY.div(reserveX).toString(),
-      shareOfPool: d(params.amount).div(reserveX.add(d(params.amount))).toString(),
+      amount: outputAmount,
+      coinXDivCoinY: reserveX.div(reserveY),
+      coinYDivCoinX: reserveY.div(reserveX),
+      shareOfPool: d(params.amount).div(reserveX.add(d(params.amount))),
     }
   }
 
-  createAddLiquidityTransactionPayload(params: CreateAddLiquidityTransactionPayload): Payload {
+  addLiquidityPayload(params: AddLiquidityPayload): Payload {
     if (params.slippage >= 1 || params.slippage <= 0) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
@@ -196,7 +192,7 @@ export class SwapModule implements IModule {
     }
   }
 
-  async calculateRemoveLiquidityRates(params: CalculateRemoveLiquidityParams): Promise<CalculateRemoveLiquidityReturn> {
+  async removeLiquidityRates(params: RemoveLiquidityParams): Promise<RemoveLiquidityReturn> {
     const { modules } = this.sdk.networkOptions
 
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
@@ -232,12 +228,12 @@ export class SwapModule implements IModule {
     const coinYout = d(params.amount).mul(reserveY).div(d(lpSupply)).toDP(0)
 
     return {
-      amountX: coinXout.toString(),
-      amountY: coinYout.toString(),
+      amountX: coinXout,
+      amountY: coinYout,
     }
   }
 
-  createRemoveLiquidityTransactionPayload(params: CreateRemoveLiquidityTransactionPayload): Payload {
+  removeLiquidityPayload(params: RemoveLiquidityPayload): Payload {
     if (params.slippage >= 1 || params.slippage <= 0) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
@@ -262,7 +258,7 @@ export class SwapModule implements IModule {
     }
   }
 
-  async calculateSwapRates(params: CalculateRatesParams): Promise<CalculateRatesReturn> {
+  async swapRates(params: SwapRatesParams): Promise<SwapRatesReturn> {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.fromCoin, params.toCoin)
     const lpType = composeLP(modules.DeployerAddress, params.fromCoin, params.toCoin)
@@ -321,15 +317,15 @@ export class SwapModule implements IModule {
       : reserveToDivReserveFrom.sub(coinToDivCoinFrom).div(reserveToDivReserveFrom)
 
     return {
-      amount: outputCoins.toString(),
-      amountWithSlippage: amountWithSlippage.toString(),
-      priceImpact: priceImpact.toString(),
-      coinFromDivCoinTo: coinFromDivCoinTo.toString(),
-      coinToDivCoinFrom: coinToDivCoinFrom.toString(),
+      amount: outputCoins,
+      amountWithSlippage: amountWithSlippage,
+      priceImpact: priceImpact,
+      coinFromDivCoinTo: coinFromDivCoinTo,
+      coinToDivCoinFrom: coinToDivCoinFrom,
     }
   }
 
-  createSwapTransactionPayload(params: CreateTXPayloadParams): Payload {
+  swapPayload(params: SwapPayload): Payload {
     if (params.slippage >= 1 || params.slippage <= 0) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
@@ -376,7 +372,7 @@ export class SwapModule implements IModule {
     return coinInfo
   }
 
-  async getAllLPCoinResourcesByAddress(address: AptosResourceType): Promise<LPCoinResource[]> {
+  async getAllLPCoinResources(address: address): Promise<LPCoinResource[]> {
     const { modules } = this.sdk.networkOptions
     const resources = await this.sdk.resources.fetchAccountResources<AptosCoinStoreResource>(
       address
