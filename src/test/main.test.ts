@@ -1,5 +1,5 @@
 import SDK from '../main'
-import { d, decimalsMultiplier } from '../utils/numbers'
+import { d, decimalsMultiplier } from '../utils/number'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
@@ -9,8 +9,8 @@ const CoinsMapping: { [key: string]: string } = {
 const SenderAddress = '0xa1ice'
 
 const CoinInfo: { [key: string]: { decimals: number } } = {
-  APTOS: { decimals: 6 },
-  BTC: { decimals: 6 },
+  APTOS: { decimals: 8 },
+  BTC: { decimals: 8 },
 }
 
 function convertToDecimals(amount: number | string, coin: string) {
@@ -40,9 +40,9 @@ describe('Swap Module', () => {
     },
   })
 
-  test('getResources', async () => {
+  test('getAllLPCoinResources', async () => {
     const address = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c'
-    const output = await sdk.swap.getAllLPCoinResourcesByAddress(address)
+    const output = await sdk.swap.getAllLPCoinResources(address)
     console.log(output)
     expect(1).toBe(1)
   })
@@ -62,17 +62,13 @@ describe('Swap Module', () => {
     expect(+value).toBeGreaterThanOrEqual(1000)
   })
 
-  test('checkPairExist', async () => {
-    const output = await sdk.swap.checkPairExist({
-      coinX: CoinsMapping.APTOS,
-      coinY: CoinsMapping.BTC,
-    })
-
+  test('isPairExist', async () => {
+    const output = await sdk.swap.isPairExist(CoinsMapping.APTOS, CoinsMapping.BTC)
     expect(output).toBe(true)
   })
 
-  test('calculateRates (test 1)', async () => {
-    const output = await sdk.swap.calculateSwapRates({
+  test('swapRates #1', async () => {
+    const output = await sdk.swap.swapRates({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
       amount: convertToDecimals(1, 'APTOS'),
@@ -84,15 +80,15 @@ describe('Swap Module', () => {
 
     console.log({
       amount: output.amount,
-      pretty: prettyAmount(output.amount, 'BTC'),
+      pretty: prettyAmount(output.amount.toString(), 'BTC'),
     })
 
     expect(1).toBe(1)
   })
 
-  test('calculateRates (test 2)', async () => {
+  test('swapRates #2', async () => {
     console.log(convertToDecimals('0.00001', 'BTC'),)
-    const output = await sdk.swap.calculateSwapRates({
+    const output = await sdk.swap.swapRates({
       fromCoin: CoinsMapping.BTC,
       toCoin: CoinsMapping.APTOS,
       amount: convertToDecimals('1', 'APTOS'),
@@ -104,15 +100,15 @@ describe('Swap Module', () => {
 
     console.log({
       amount: output.amount,
-      pretty: prettyAmount(output.amount, 'BTC'),
+      pretty: prettyAmount(output.amount.toString(), 'BTC'),
     })
 
     expect(1).toBe(1)
   })
 
-  test('createSwapTransactionPayload (coin_to_exact_coin)', async () => {
+  test('swapPayload (coin_to_exact_coin)', async () => {
     console.log(convertToDecimals('0.001', 'BTC'))
-    const output = sdk.swap.createSwapTransactionPayload({
+    const output = sdk.swap.swapPayload({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
       fromAmount: convertToDecimals('0.116831', 'APTOS'),
@@ -128,9 +124,9 @@ describe('Swap Module', () => {
     expect(1).toBe(1)
   })
 
-  test('createSwapTransactionPayload (exact_coin_to_coin)', async () => {
+  test('swapPayload (exact_coin_to_coin)', async () => {
     console.log(convertToDecimals('1', 'APTOS'))
-    const output = sdk.swap.createSwapTransactionPayload({
+    const output = sdk.swap.swapPayload({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
       fromAmount: convertToDecimals('1', 'APTOS'),
@@ -146,8 +142,8 @@ describe('Swap Module', () => {
     expect(1).toBe(1)
   })
 
-  test('calculateAddLiquidityRates', async () => {
-    const output = await sdk.swap.calculateAddLiquidityRates({
+  test('addLiquidityRates', async () => {
+    const output = await sdk.swap.addLiquidityRates({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       fixedCoin: 'X',
@@ -157,15 +153,15 @@ describe('Swap Module', () => {
     console.log(output)
     console.log({
       amount: output.amount,
-      pretty: prettyAmount(output.amount, 'BTC'),
+      pretty: prettyAmount(output.amount.toString(), 'BTC'),
     })
 
     expect(1).toBe(1)
   })
 
-  test('createAddLiquidityTransactionPayload', async () => {
+  test('addLiquidityPayload', async () => {
     console.log(convertToDecimals('0.001', 'BTC'))
-    const output = sdk.swap.createAddLiquidityTransactionPayload({
+    const output = sdk.swap.addLiquidityPayload({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amountX: convertToDecimals('0.116831', 'APTOS'),
@@ -179,8 +175,8 @@ describe('Swap Module', () => {
     expect(1).toBe(1)
   })
 
-  test('calculateRemoveLiquidityRates', async () => {
-    const output = await sdk.swap.calculateRemoveLiquidityRates({
+  test('removeLiquidityRates', async () => {
+    const output = await sdk.swap.removeLiquidityRates({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amount: 1000,
@@ -191,8 +187,8 @@ describe('Swap Module', () => {
     expect(1).toBe(1)
   })
 
-  test('createRemoveLiquidityTransactionPayload', async () => {
-    const output = sdk.swap.createRemoveLiquidityTransactionPayload({
+  test('removeLiquidityPayload', async () => {
+    const output = sdk.swap.removeLiquidityPayload({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amount: 1000,
