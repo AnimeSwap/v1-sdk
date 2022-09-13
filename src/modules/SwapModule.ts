@@ -25,6 +25,7 @@ import {
 } from '../utils/contract'
 import { d } from '../utils/number'
 import Decimal from 'decimal.js'
+import { hexToString } from '../utils/hex'
 
 export type AddLiquidityParams = {
   coinX: AptosResourceType
@@ -127,6 +128,11 @@ export type PairListResource = [{
     struct_name: string
   }
 }]
+
+export type CoinPair = {
+  coinX: AptosResourceType
+  coinY: AptosResourceType
+}
 
 export type PairInfoResource = {
   pair_created_event: AptosResourceType
@@ -445,7 +451,7 @@ export class SwapModule implements IModule {
     }
   }
 
-  async getAllPairs(): Promise<PairListResource> {
+  async getAllPairs(): Promise<CoinPair[]> {
     const { modules } = this.sdk.networkOptions
     const pairInfoType = composePairInfo(modules.ResourceAccountAddress)
     const pairInfo = await this.sdk.resources.fetchAccountResource<PairInfoResource>(
@@ -458,7 +464,13 @@ export class SwapModule implements IModule {
     }
 
     const pairList = pairInfo.data.pair_list
-    return pairList
+    const ret = pairList.map(v => {
+      return {
+        coinX: `${v.coin_x.account_address}::${hexToString(v.coin_x.module_name)}::${hexToString(v.coin_x.struct_name)}`,
+        coinY: `${v.coin_y.account_address}::${hexToString(v.coin_y.module_name)}::${hexToString(v.coin_y.struct_name)}`,
+      }
+    })
+    return ret
   }
 }
 
