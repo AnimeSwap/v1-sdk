@@ -21,6 +21,7 @@ import {
   composeLPCoinType,
   composeSwapPoolData,
   composeCoinStore,
+  composePairInfo,
 } from '../utils/contract'
 import { d } from '../utils/number'
 import Decimal from 'decimal.js'
@@ -107,6 +108,29 @@ export type LPCoinParams = {
   address: address
   coinX: AptosResourceType
   coinY: AptosResourceType
+}
+
+export type PairListResource = [{
+  coin_x: {
+    account_address: string
+    module_name: string
+    struct_name: string
+  }
+  coin_y: {
+    account_address: string
+    module_name: string
+    struct_name: string
+  }
+  lp_coin: {
+    account_address: string
+    module_name: string
+    struct_name: string
+  }
+}]
+
+export type PairInfoResource = {
+  pair_created_event: AptosResourceType
+  pair_list: PairListResource
 }
 
 export class SwapModule implements IModule {
@@ -372,7 +396,7 @@ export class SwapModule implements IModule {
     return coinInfo
   }
 
-  async getAllLPCoinResources(address: address): Promise<LPCoinResource[]> {
+  async getAllLPCoinResourcesByAddress(address: address): Promise<LPCoinResource[]> {
     const { modules } = this.sdk.networkOptions
     const resources = await this.sdk.resources.fetchAccountResources<AptosCoinStoreResource>(
       address
@@ -419,6 +443,22 @@ export class SwapModule implements IModule {
       lpCoin: lpCoin,
       value: lpCoinStore.data.coin.value,
     }
+  }
+
+  async getAllPairs(): Promise<PairListResource> {
+    const { modules } = this.sdk.networkOptions
+    const pairInfoType = composePairInfo(modules.ResourceAccountAddress)
+    const pairInfo = await this.sdk.resources.fetchAccountResource<PairInfoResource>(
+      modules.ResourceAccountAddress,
+      pairInfoType,
+    )
+
+    if (!pairInfo) {
+      throw new Error(`PairInfo (${pairInfoType}) not found`)
+    }
+
+    const pairList = pairInfo.data.pair_list
+    return pairList
   }
 }
 
