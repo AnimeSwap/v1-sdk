@@ -381,18 +381,18 @@ export class SwapModule implements IModule {
       params.toCoin,
     ]
 
-    const fromAmount =
+    const frontAmount =
       params.fixedCoin === 'from'
         ? params.fromAmount
-        : withSlippage(d(params.fromAmount), d(params.slippage), 'minus')
-    const toAmount =
+        : params.toAmount
+    const backAmount =
       params.fixedCoin === 'to'
-        ? params.toAmount
-        : withSlippage(d(params.toAmount), d(params.slippage), 'plus')
+        ? withSlippage(d(params.fromAmount), d(params.slippage), 'plus')
+        : withSlippage(d(params.toAmount), d(params.slippage), 'minus')
 
     const deadline = Math.floor(Date.now() / 1000) + params.deadline * 60
 
-    const args = [modules.ResourceAccountAddress, d(fromAmount).toString(), d(toAmount).toString(), params.toAddress, d(deadline).toString()]
+    const args = [modules.ResourceAccountAddress, d(frontAmount).toString(), d(backAmount).toString(), params.toAddress, d(deadline).toString()]
 
     return {
       type: 'entry_function_payload',

@@ -2,6 +2,7 @@ import { SDK } from '../sdk'
 import { IModule } from '../interfaces/IModule'
 import {
   AptosResourceType,
+  Payload,
 } from '../types/aptos'
 import { d } from '../utils/number'
 import {
@@ -9,9 +10,10 @@ import {
   getCoinInWithFees,
   getCoinOutWithFees,
   LiquidityPoolResource,
+  withSlippage,
 } from './SwapModule'
 import { notEmpty } from '../utils/is'
-import { composeSwapPoolData } from '../utils/contract'
+import { composeSwapPoolData, composeType } from '../utils/contract'
 import {
   SwapPoolData,
 } from '../types/swap'
@@ -197,7 +199,7 @@ export class RouteModule implements IModule {
     return bestTrades
   }
 
-  async getRouteSwapExactCoinToCoin(params: SwapCoinParams): Promise<Trade[]> {
+  async getRouteSwapExactCoinForCoin(params: SwapCoinParams): Promise<Trade[]> {
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -226,7 +228,7 @@ export class RouteModule implements IModule {
     return bestTrades
   }
 
-  async getRouteSwapCoinToExactCoin(params: SwapCoinParams): Promise<Trade[]> {
+  async getRouteSwapCoinForExactCoin(params: SwapCoinParams): Promise<Trade[]> {
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -254,29 +256,115 @@ export class RouteModule implements IModule {
     )
     return bestTrades
   }
+
+  swapExactCoinForCoinPayload(
+      coinInType: AptosResourceType,
+      params: Trade,
+      toAddress: AptosResourceType,
+      slippage: number,
+      deadline: number,
+    ): Payload {
+    if (params.coinPairList.length > 3 || params.coinPairList.length < 1) {
+      throw new Error(`Invalid coin pair length (${params.coinPairList.length}) value`)
+    }
+    const { modules } = this.sdk.networkOptions
+
+    let functionEntryName = ''
+    if (params.coinPairList.length == 1) {
+      functionEntryName = 'swap_exact_coins_for_coins_entry'
+    } else if (params.coinPairList.length == 2) {
+      functionEntryName = 'swap_exact_coins_for_coins_2_pair_entry'
+    } else if (params.coinPairList.length == 3) {
+      functionEntryName = 'swap_exact_coins_for_coins_3_pair_entry'
+    }
+
+    const functionName = composeType(
+      modules.Scripts,
+      functionEntryName
+    )
+
+    const typeArguments = getCoinTypeList(coinInType, params.coinPairList)
+
+    const fromAmount = params.amountList[0]
+    const toAmount = withSlippage(d(params.amountList[params.amountList.length - 1]), d(slippage), 'minus')
+
+    const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
+
+    const args = [modules.ResourceAccountAddress, fromAmount, d(toAmount).toString(), toAddress, d(deadlineArgs).toString()]
+
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      typeArguments: typeArguments,
+      arguments: args,
+    }
+  }
+
+  swapCoinForExactCoinPayload(
+      coinInType: AptosResourceType,
+      params: Trade,
+      toAddress: AptosResourceType,
+      slippage: number,
+      deadline: number,
+    ): Payload {
+    if (params.coinPairList.length > 3 || params.coinPairList.length < 1) {
+      throw new Error(`Invalid coin pair length (${params.coinPairList.length}) value`)
+    }
+    const { modules } = this.sdk.networkOptions
+
+    let functionEntryName = ''
+    if (params.coinPairList.length == 1) {
+      functionEntryName = 'swap_coins_for_exact_coins_entry'
+    } else if (params.coinPairList.length == 2) {
+      functionEntryName = 'swap_coins_for_exact_coins_2_pair_entry'
+    } else if (params.coinPairList.length == 3) {
+      functionEntryName = 'swap_coins_for_exact_coins_3_pair_entry'
+    }
+
+    const functionName = composeType(
+      modules.Scripts,
+      functionEntryName
+    )
+
+    const typeArguments = getCoinTypeList(coinInType, params.coinPairList)
+
+    const toAmount = params.amountList[params.amountList.length - 1]
+    const fromAmount = withSlippage(d(params.amountList[0]), d(slippage), 'plus')
+
+    const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
+
+    const args = [modules.ResourceAccountAddress, toAmount, d(fromAmount).toString(), toAddress, d(deadlineArgs).toString()]
+
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      typeArguments: typeArguments,
+      arguments: args,
+    }
+  }
 }
 
 function sortedInsert<T>(items: T[], add: T, maxSize: number, comparator: (a: T, b: T) => number) {
-  let index;
+  let index
   for (index = 0; index < items.length; index++) {
-    const comp = comparator(items[index], add);
+    const comp = comparator(items[index], add)
     if (comp >= 0) {
       break
     } else if (comp == -1) {
       continue
     }
   }
-  items.splice(index, 0, add);
+  items.splice(index, 0, add)
   if (items.length > maxSize) {
-    items.pop();
+    items.pop()
   }
 }
 
 function tradeComparator(trade1: Trade, trade2: Trade): number {
-  const trade1In = d(trade1.amountList[0]);
-  const trade2In = d(trade2.amountList[0]);
-  const trade1Out = d(trade1.amountList[trade1.amountList.length - 1]);
-  const trade2Out = d(trade2.amountList[trade2.amountList.length - 1]);
+  const trade1In = d(trade1.amountList[0])
+  const trade2In = d(trade2.amountList[0])
+  const trade1Out = d(trade1.amountList[trade1.amountList.length - 1])
+  const trade2Out = d(trade2.amountList[trade2.amountList.length - 1])
   if (trade1In.eq(trade2In)) {
     if (trade1Out.eq(trade2Out)) {
       return trade1.amountList.length - trade2.amountList.length
@@ -293,4 +381,20 @@ function tradeComparator(trade1: Trade, trade2: Trade): number {
       return 1
     }
   }
+}
+
+function getCoinTypeList(coinInType: AptosResourceType, coinPairList: CoinPair[]): AptosResourceType[] {
+  const coinTypeList = [coinInType]
+  let currentCoinType = coinInType
+  for (let i = 0; i < coinPairList.length; i++) {
+    const coinPair = coinPairList[i]
+    if (coinPair.coinX == currentCoinType) {
+      currentCoinType = coinPair.coinY
+      coinTypeList.push(coinPair.coinY)
+    } else {
+      currentCoinType = coinPair.coinX
+      coinTypeList.push(coinPair.coinX)
+    }
+  }
+  return coinTypeList
 }
