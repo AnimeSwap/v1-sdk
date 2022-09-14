@@ -27,6 +27,7 @@ import {
 import { d } from '../utils/number'
 import Decimal from 'decimal.js'
 import { hexToString } from '../utils/hex'
+import { notEmpty } from '../utils/is'
 
 export type AddLiquidityParams = {
   coinX: AptosResourceType
@@ -300,7 +301,7 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.fromCoin, params.toCoin)
     const lpType = composeLP(modules.DeployerAddress, params.fromCoin, params.toCoin)
-    const SwapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
+    const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -309,17 +310,17 @@ export class SwapModule implements IModule {
 
     const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
       modules.DeployerAddress,
-      SwapPoolDataType
+      swapPoolDataType
     )
 
-    const [lp, SwapPoolData] = await Promise.all([task1, task2])
+    const [lp, swapPoolData] = await Promise.all([task1, task2])
 
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
     }
 
-    if (!SwapPoolData) {
-      throw new Error(`SwapPoolData (${SwapPoolDataType}) not found`)
+    if (!swapPoolData) {
+      throw new Error(`SwapPoolData (${swapPoolDataType}) not found`)
     }
 
     const coinXReserve = lp.data.coin_x_reserve
@@ -329,7 +330,7 @@ export class SwapModule implements IModule {
       ? [d(coinXReserve), d(coinYReserve)]
       : [d(coinYReserve), d(coinXReserve)]
 
-    const fee = SwapPoolData.data.swap_fee
+    const fee = swapPoolData.data.swap_fee
 
     const outputCoins =
       isSorted
@@ -430,7 +431,7 @@ export class SwapModule implements IModule {
         lpCoin: regexResult[1],
         value: resource.data.coin.value,
       }
-    }).filter(v => v != null)
+    }).filter(notEmpty)
     if (!filteredResource) {
       throw new Error(`filteredResource (${filteredResource}) not found`)
     }
@@ -501,7 +502,7 @@ export class SwapModule implements IModule {
         coinXReserve: resource.data.coin_x_reserve,
         coinYReserve: resource.data.coin_y_reserve,
       }
-    }).filter(v => v != null)
+    }).filter(notEmpty)
     if (!filteredResource) {
       throw new Error(`filteredResource (${filteredResource}) not found`)
     }
@@ -509,7 +510,7 @@ export class SwapModule implements IModule {
   }
 }
 
-function getCoinOutWithFees(
+export function getCoinOutWithFees(
   coinInVal: Decimal.Instance,
   reserveInSize: Decimal.Instance,
   reserveOutSize: Decimal.Instance,
@@ -523,7 +524,7 @@ function getCoinOutWithFees(
   return coinInAfterFees.mul(reserveOutSize).div(newReservesInSize).toDP(0)
 }
 
-function getCoinInWithFees(
+export function getCoinInWithFees(
   coinOutVal: Decimal.Instance,
   reserveOutSize: Decimal.Instance,
   reserveInSize: Decimal.Instance,
