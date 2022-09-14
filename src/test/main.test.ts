@@ -53,6 +53,12 @@ describe('Swap Module', () => {
     expect(1).toBe(1)
   })
 
+  test('getAllLPCoinResourcesWithAdmin', async () => {
+    const output = await sdk.swap.getAllLPCoinResourcesWithAdmin()
+    console.log(output)
+    expect(1).toBe(1)
+  })
+
   test('getCoinInfo', async () => {
     const output = await sdk.swap.getCoinInfo(CoinsMapping.APTOS)
     expect(output?.data.decimals).toBe(8)

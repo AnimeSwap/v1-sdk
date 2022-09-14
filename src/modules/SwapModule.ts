@@ -22,6 +22,7 @@ import {
   composeSwapPoolData,
   composeCoinStore,
   composePairInfo,
+  composeLiquidityPool,
 } from '../utils/contract'
 import { d } from '../utils/number'
 import Decimal from 'decimal.js'
@@ -103,6 +104,13 @@ export type LPCoinResource = {
   coinY: AptosResourceType
   lpCoin: AptosResourceType
   value: string
+} | null
+
+export type LiquidityPoolResource = {
+  coinX: AptosResourceType
+  coinY: AptosResourceType
+  coinXReserve: string
+  coinYReserve: string
 } | null
 
 export type LPCoinParams = {
@@ -471,6 +479,33 @@ export class SwapModule implements IModule {
       }
     })
     return ret
+  }
+
+  async getAllLPCoinResourcesWithAdmin(): Promise<LiquidityPoolResource[]> {
+    const { modules } = this.sdk.networkOptions
+    const resources = await this.sdk.resources.fetchAccountResources<SwapPoolResource>(
+      modules.ResourceAccountAddress
+    )
+    if (!resources) {
+      throw new Error(`resources (${resources}) not found`)
+    }
+    const lpCoinType = composeLiquidityPool(modules.DeployerAddress)
+    const regexStr = `${lpCoinType}<(.+?), ?(.+?), ?(.+)>`
+    const filteredResource = resources.map(resource => {
+      const regex = new RegExp(regexStr, 'g')
+      const regexResult = regex.exec(resource.type)
+      if (!regexResult) return null
+      return {
+        coinX: regexResult[1],
+        coinY: regexResult[2],
+        coinXReserve: resource.data.coin_x_reserve,
+        coinYReserve: resource.data.coin_y_reserve,
+      }
+    }).filter(v => v != null)
+    if (!filteredResource) {
+      throw new Error(`filteredResource (${filteredResource}) not found`)
+    }
+    return filteredResource
   }
 }
 
