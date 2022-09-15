@@ -6,21 +6,21 @@ import {
 } from '../types/aptos'
 import { d } from '../utils/number'
 import {
-  CoinPair,
   getCoinInWithFees,
   getCoinOutWithFees,
   LiquidityPoolResource,
   withSlippage,
 } from './SwapModule'
-import { notEmpty } from '../utils/is'
 import { composeSwapPoolData, composeType } from '../utils/contract'
 import {
   SwapPoolData,
 } from '../types/swap'
+import Decimal from 'decimal.js'
 
 type Trade = {
-  coinPairList: CoinPair[]
+  coinPairList: LiquidityPoolResource[]
   amountList: string[]
+  priceImpact: Decimal
 }
 
 export type SwapCoinParams = {
@@ -43,7 +43,7 @@ export class RouteModule implements IModule {
   /**
    * FromExactCoinToCoin
    * @param pairList all pair list from `getAllLPCoinResourcesWithAdmin()`
-   * @param coinTypeOutFinal out coin type
+   * @param coinTypeOutOrigin out coin type
    * @param maxNumResults top result nums
    * @param maxHops remaining hops
    * @param currentPairs current path pairs
@@ -56,7 +56,8 @@ export class RouteModule implements IModule {
    */
   async bestTradeExactIn(
     pairList: LiquidityPoolResource[],
-    coinTypeOutFinal: AptosResourceType,
+    coinTypeInOrigin: AptosResourceType,
+    coinTypeOutOrigin: AptosResourceType,
     maxNumResults: number,
     maxHops: number,
     currentPairs: LiquidityPoolResource[],
@@ -80,17 +81,14 @@ export class RouteModule implements IModule {
         const coinOut = getCoinOutWithFees(d(nextAmountIn), d(reserveIn), d(reserveOut), d(fee))
         if (coinOut.lessThan(d(0) || coinOut.greaterThan(d(reserveOut)))) continue
         // we have arrived at the output token, so this is the final trade of one of the paths
-        if (coinTypeOut == coinTypeOutFinal) {
-          const pairs = [...currentPairs, pair]
-          const coinPairList = pairs.filter(notEmpty).map(v => {
-            return {
-              coinX: v.coinX,
-              coinY: v.coinY,
-            }
-          })
+        if (coinTypeOut == coinTypeOutOrigin) {
+          const coinPairList = [...currentPairs, pair]
+          const amountList = [...currentAmounts, coinOut.toString()]
+          const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
           const newTrade = {
             coinPairList,
-            amountList: [...currentAmounts, coinOut.toString()],
+            amountList,
+            priceImpact,
           }
           sortedInsert(
             bestTrades,
@@ -103,7 +101,8 @@ export class RouteModule implements IModule {
 
           this.bestTradeExactIn(
             pairListExcludingThisPair,
-            coinTypeOutFinal,
+            coinTypeInOrigin,
+            coinTypeOutOrigin,
             maxNumResults,
             maxHops - 1,
             [...currentPairs, pair],
@@ -123,7 +122,7 @@ export class RouteModule implements IModule {
   /**
    * FromCoinToExactCoin
    * @param pairList all pair list from `getAllLPCoinResourcesWithAdmin()`
-   * @param coinTypeInFinal in coin type
+   * @param coinTypeInOrigin in coin type
    * @param maxNumResults top result nums
    * @param maxHops remaining hops
    * @param currentPairs current path pairs
@@ -136,7 +135,8 @@ export class RouteModule implements IModule {
    */
   async bestTradeExactOut(
     pairList: LiquidityPoolResource[],
-    coinTypeInFinal: AptosResourceType,
+    coinTypeInOrigin: AptosResourceType,
+    coinTypeOutOrigin: AptosResourceType,
     maxNumResults: number,
     maxHops: number,
     currentPairs: LiquidityPoolResource[],
@@ -160,17 +160,14 @@ export class RouteModule implements IModule {
         const coinIn = getCoinInWithFees(d(nextAmountOut), d(reserveOut), d(reserveIn), d(fee))
         if (coinIn.lessThan(d(0) || coinIn.greaterThan(d(reserveIn)))) continue
         // we have arrived at the output token, so this is the final trade of one of the paths
-        if (coinTypeIn == coinTypeInFinal) {
-          const pairs = [pair, ...currentPairs]
-          const coinPairList = pairs.filter(notEmpty).map(v => {
-            return {
-              coinX: v.coinX,
-              coinY: v.coinY,
-            }
-          })
+        if (coinTypeIn == coinTypeInOrigin) {
+          const coinPairList = [pair, ...currentPairs]
+          const amountList = [coinIn.toString(), ...currentAmounts]
+          const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
           const newTrade = {
             coinPairList,
-            amountList: [coinIn.toString(), ...currentAmounts],
+            amountList,
+            priceImpact,
           }
           sortedInsert(
             bestTrades,
@@ -183,7 +180,8 @@ export class RouteModule implements IModule {
 
           this.bestTradeExactOut(
             pairListExcludingThisPair,
-            coinTypeInFinal,
+            coinTypeInOrigin,
+            coinTypeOutOrigin,
             maxNumResults,
             maxHops - 1,
             [pair, ...currentPairs],
@@ -215,6 +213,7 @@ export class RouteModule implements IModule {
     const fee = swapPoolData.data.swap_fee
     const bestTrades = this.bestTradeExactIn(
       pairList,
+      params.fromCoin,
       params.toCoin,
       3,
       3,
@@ -245,6 +244,7 @@ export class RouteModule implements IModule {
     const bestTrades = this.bestTradeExactOut(
       pairList,
       params.fromCoin,
+      params.toCoin,
       3,
       3,
       [],
@@ -259,22 +259,22 @@ export class RouteModule implements IModule {
 
   swapExactCoinForCoinPayload(
       coinInType: AptosResourceType,
-      params: Trade,
+      trade: Trade,
       toAddress: AptosResourceType,
       slippage: number,
       deadline: number,
     ): Payload {
-    if (params.coinPairList.length > 3 || params.coinPairList.length < 1) {
-      throw new Error(`Invalid coin pair length (${params.coinPairList.length}) value`)
+    if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
+      throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
     }
     const { modules } = this.sdk.networkOptions
 
     let functionEntryName = ''
-    if (params.coinPairList.length == 1) {
+    if (trade.coinPairList.length == 1) {
       functionEntryName = 'swap_exact_coins_for_coins_entry'
-    } else if (params.coinPairList.length == 2) {
+    } else if (trade.coinPairList.length == 2) {
       functionEntryName = 'swap_exact_coins_for_coins_2_pair_entry'
-    } else if (params.coinPairList.length == 3) {
+    } else if (trade.coinPairList.length == 3) {
       functionEntryName = 'swap_exact_coins_for_coins_3_pair_entry'
     }
 
@@ -283,10 +283,10 @@ export class RouteModule implements IModule {
       functionEntryName
     )
 
-    const typeArguments = getCoinTypeList(coinInType, params.coinPairList)
+    const typeArguments = getCoinTypeList(coinInType, trade.coinPairList)
 
-    const fromAmount = params.amountList[0]
-    const toAmount = withSlippage(d(params.amountList[params.amountList.length - 1]), d(slippage), 'minus')
+    const fromAmount = trade.amountList[0]
+    const toAmount = withSlippage(d(trade.amountList[trade.amountList.length - 1]), d(slippage), 'minus')
 
     const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
 
@@ -302,22 +302,22 @@ export class RouteModule implements IModule {
 
   swapCoinForExactCoinPayload(
       coinInType: AptosResourceType,
-      params: Trade,
+      trade: Trade,
       toAddress: AptosResourceType,
       slippage: number,
       deadline: number,
     ): Payload {
-    if (params.coinPairList.length > 3 || params.coinPairList.length < 1) {
-      throw new Error(`Invalid coin pair length (${params.coinPairList.length}) value`)
+    if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
+      throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
     }
     const { modules } = this.sdk.networkOptions
 
     let functionEntryName = ''
-    if (params.coinPairList.length == 1) {
+    if (trade.coinPairList.length == 1) {
       functionEntryName = 'swap_coins_for_exact_coins_entry'
-    } else if (params.coinPairList.length == 2) {
+    } else if (trade.coinPairList.length == 2) {
       functionEntryName = 'swap_coins_for_exact_coins_2_pair_entry'
-    } else if (params.coinPairList.length == 3) {
+    } else if (trade.coinPairList.length == 3) {
       functionEntryName = 'swap_coins_for_exact_coins_3_pair_entry'
     }
 
@@ -326,10 +326,10 @@ export class RouteModule implements IModule {
       functionEntryName
     )
 
-    const typeArguments = getCoinTypeList(coinInType, params.coinPairList)
+    const typeArguments = getCoinTypeList(coinInType, trade.coinPairList)
 
-    const toAmount = params.amountList[params.amountList.length - 1]
-    const fromAmount = withSlippage(d(params.amountList[0]), d(slippage), 'plus')
+    const toAmount = trade.amountList[trade.amountList.length - 1]
+    const fromAmount = withSlippage(d(trade.amountList[0]), d(slippage), 'plus')
 
     const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
 
@@ -383,11 +383,12 @@ function tradeComparator(trade1: Trade, trade2: Trade): number {
   }
 }
 
-function getCoinTypeList(coinInType: AptosResourceType, coinPairList: CoinPair[]): AptosResourceType[] {
+function getCoinTypeList(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[]): AptosResourceType[] {
   const coinTypeList = [coinInType]
   let currentCoinType = coinInType
   for (let i = 0; i < coinPairList.length; i++) {
     const coinPair = coinPairList[i]
+    if (!coinPair) continue
     if (coinPair.coinX == currentCoinType) {
       currentCoinType = coinPair.coinY
       coinTypeList.push(coinPair.coinY)
@@ -397,4 +398,24 @@ function getCoinTypeList(coinInType: AptosResourceType, coinPairList: CoinPair[]
     }
   }
   return coinTypeList
+}
+
+// calculated as: abs(realAmountOut - noImpactAmountOut) / noImpactAmountOut
+function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: string[]): Decimal {
+  const realAmountOut = d(amountList[amountList.length - 1])
+  let noImpactAmountOut = d(amountList[0])
+  let currentCoinType = coinInType
+  for (let i = 0; i < coinPairList.length; i++) {
+    const coinPair = coinPairList[i]
+    if (!coinPair) continue
+    if (coinPair.coinX == currentCoinType) {
+      currentCoinType = coinPair.coinY
+      noImpactAmountOut = noImpactAmountOut.mul(d(coinPair.coinYReserve)).div(d(coinPair.coinXReserve))
+    } else {
+      currentCoinType = coinPair.coinX
+      noImpactAmountOut = noImpactAmountOut.mul(d(coinPair.coinXReserve)).div(d(coinPair.coinYReserve))
+    }
+  }
+  const priceImpact = realAmountOut.sub(noImpactAmountOut).div(noImpactAmountOut)
+  return priceImpact.abs()
 }

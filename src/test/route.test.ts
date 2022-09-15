@@ -21,13 +21,24 @@ describe('Route Module', () => {
     },
   })
 
-  test('getRouteSwapExactCoinForCoin', async () => {
-    const output = await sdk.route.getRouteSwapExactCoinForCoin({
+  test('getRouteSwapExactCoinForCoin (no route)', async () => {
+    const trades = await sdk.route.getRouteSwapExactCoinForCoin({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
-      amount: '10000000',
+      amount: 1e20.toString(),
     })
-    console.log(output)
+    console.log(trades)
+    expect(trades.length).toBeGreaterThanOrEqual(1)
+    expect(trades[0].priceImpact.toNumber()).toBeGreaterThan(0.99)
+  })
+
+  test('getRouteSwapExactCoinForCoin', async () => {
+    const trades = await sdk.route.getRouteSwapExactCoinForCoin({
+      fromCoin: CoinsMapping.APTOS,
+      toCoin: CoinsMapping.BTC,
+      amount: '100000',
+    })
+    console.log(trades)
     expect(1).toBe(1)
   })
 
@@ -35,8 +46,9 @@ describe('Route Module', () => {
     const trades = await sdk.route.getRouteSwapExactCoinForCoin({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
-      amount: '10000000',
+      amount: '100000',
     })
+    expect(trades.length).toBeGreaterThanOrEqual(1)
     const output = sdk.route.swapExactCoinForCoinPayload(
       CoinsMapping.APTOS,
       trades[0],
@@ -49,12 +61,12 @@ describe('Route Module', () => {
   })
 
   test('getRouteSwapCoinForExactCoin', async () => {
-    const output = await sdk.route.getRouteSwapCoinForExactCoin({
+    const trades = await sdk.route.getRouteSwapCoinForExactCoin({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
-      amount: '10000000',
+      amount: '100000',
     })
-    console.log(output)
+    console.log(trades)
     expect(1).toBe(1)
   })
 
@@ -62,8 +74,9 @@ describe('Route Module', () => {
     const trades = await sdk.route.getRouteSwapCoinForExactCoin({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
-      amount: '10000000',
+      amount: '100000',
     })
+    expect(trades.length).toBeGreaterThanOrEqual(1)
     const output = sdk.route.swapCoinForExactCoinPayload(
       CoinsMapping.APTOS,
       trades[0],
