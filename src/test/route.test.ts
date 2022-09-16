@@ -50,7 +50,6 @@ describe('Route Module', () => {
     })
     expect(trades.length).toBeGreaterThanOrEqual(1)
     const output = sdk.route.swapExactCoinForCoinPayload(
-      CoinsMapping.APTOS,
       trades[0],
       SenderAddress,
       0.05,
@@ -78,7 +77,6 @@ describe('Route Module', () => {
     })
     expect(trades.length).toBeGreaterThanOrEqual(1)
     const output = sdk.route.swapCoinForExactCoinPayload(
-      CoinsMapping.APTOS,
       trades[0],
       SenderAddress,
       0.05,

@@ -18,9 +18,10 @@ import {
 import Decimal from 'decimal.js'
 
 type Trade = {
-  coinPairList: LiquidityPoolResource[]
-  amountList: string[]
-  priceImpact: Decimal
+  coinPairList: LiquidityPoolResource[] // coin pair info with reserve amount
+  amountList: string[]  // coin amount, from `fromCoin` to `toCoin`
+  coinTypeList: string[]  // coin type, from `fromCoin` to `toCoin`
+  priceImpact: Decimal  // price impact of this trade
 }
 
 export type SwapCoinParams = {
@@ -84,10 +85,12 @@ export class RouteModule implements IModule {
         if (coinTypeOut == coinTypeOutOrigin) {
           const coinPairList = [...currentPairs, pair]
           const amountList = [...currentAmounts, coinOut.toString()]
+          const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
           const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
           const newTrade = {
             coinPairList,
             amountList,
+            coinTypeList,
             priceImpact,
           }
           sortedInsert(
@@ -163,10 +166,12 @@ export class RouteModule implements IModule {
         if (coinTypeIn == coinTypeInOrigin) {
           const coinPairList = [pair, ...currentPairs]
           const amountList = [coinIn.toString(), ...currentAmounts]
+          const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
           const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
           const newTrade = {
             coinPairList,
             amountList,
+            coinTypeList,
             priceImpact,
           }
           sortedInsert(
@@ -258,7 +263,6 @@ export class RouteModule implements IModule {
   }
 
   swapExactCoinForCoinPayload(
-      coinInType: AptosResourceType,
       trade: Trade,
       toAddress: AptosResourceType,
       slippage: number,
@@ -283,7 +287,7 @@ export class RouteModule implements IModule {
       functionEntryName
     )
 
-    const typeArguments = getCoinTypeList(coinInType, trade.coinPairList)
+    const typeArguments = trade.coinTypeList
 
     const fromAmount = trade.amountList[0]
     const toAmount = withSlippage(d(trade.amountList[trade.amountList.length - 1]), d(slippage), 'minus')
@@ -301,7 +305,6 @@ export class RouteModule implements IModule {
   }
 
   swapCoinForExactCoinPayload(
-      coinInType: AptosResourceType,
       trade: Trade,
       toAddress: AptosResourceType,
       slippage: number,
@@ -326,7 +329,7 @@ export class RouteModule implements IModule {
       functionEntryName
     )
 
-    const typeArguments = getCoinTypeList(coinInType, trade.coinPairList)
+    const typeArguments = trade.coinTypeList
 
     const toAmount = trade.amountList[trade.amountList.length - 1]
     const fromAmount = withSlippage(d(trade.amountList[0]), d(slippage), 'plus')
