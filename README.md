@@ -145,42 +145,35 @@ const sdk = new SDK({
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
   const aptosAmount = 1e6
 
-  const output = await sdk.swap.swapRates({
+  const trades = await sdk.route.getRouteSwapExactCoinForCoin({
     fromCoin: APTOS,
     toCoin: BTC,
-    amount: aptosAmount,
-    fixedCoin: 'from',  // fixed input coin
-    slippage: 0.05,     // 5%
+    amount: aptosAmount.toString(),
   });
-
+  if (trades.length == 0) throw("No route error")
+  const bestTrade = trades[0]
   /**
-    output type:
+    bestTrade type:
     {
-      amount: Decimal
-      amountWithSlippage: Decimal
+      coinPairList: LiquidityPoolResource[]
+      amountList: string[]
+      coinTypeList: string[]
       priceImpact: Decimal
-      coinFromDivCoinTo: Decimal
-      coinToDivCoinFrom: Decimal
     }
    */
 
-  const txPayload = sdk.swap.swapPayload({
-    fromCoin: APTOS,
-    toCoin: BTC,
-    fromAmount: aptosAmount,
-    toAmount: output.amount,
-    fixedCoin: 'from',  // fixed input coin
-    toAddress: '0xA11ce', // receive `toCoin` address. In the most case, should be the same as sender address
-    slippage: 0.05,     // 5%
-    deadline: 20,       // 20 minutes
-  })
+  const output = sdk.route.swapExactCoinForCoinPayload(
+    trade: bestTrade,
+    toAddress: SenderAddress, // receive `toCoin` address. In the most case, should be the same as sender address
+    slippage: 0.05,   // 5%
+    deadline: 20,     // 20 minutes
+  )
 
   /**
     output type: tx payload
    */
 })()
 ```
-
 
 ### Swap (exact out) rate calculation and tx payload. Swap coin to exact coin mode
 ```typescript
@@ -189,38 +182,52 @@ const sdk = new SDK({
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
   const btcAmount = 1e6
 
-  const output = await sdk.swap.swapRates({
+  const trades = await sdk.route.getRouteSwapCoinForExactCoin({
     fromCoin: APTOS,
     toCoin: BTC,
-    amount: btcAmount,
-    fixedCoin: 'to',  // fixed output coin
+    amount: btcAmount.toString(),
+  });
+  if (trades.length == 0) throw("No route error")
+  const bestTrade = trades[0]
+  /**
+    bestTrade type:
+    {
+      coinPairList: LiquidityPoolResource[]
+      amountList: string[]
+      coinTypeList: string[]
+      priceImpact: Decimal
+    }
+   */
+
+  const output = sdk.route.swapCoinForExactCoinPayload(
+    trade: bestTrade,
+    toAddress: SenderAddress, // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,   // 5%
+    deadline: 20,     // 20 minutes
+  )
+
+  /**
+    output type: tx payload
+   */
+})()
+```
+
+### Get all LPCoin by address
+```typescript
+(async () => {
+  const queryAddress = '0xA11ce'
+  const output = await sdk.swap.getAllLPCoinResourcesByAddress({
+    address: queryAddress,
   })
 
   /**
     output type:
-    {
-      amount: Decimal
-      amountWithSlippage: Decimal
-      priceImpact: Decimal
-      coinFromDivCoinTo: Decimal
-      coinToDivCoinFrom: Decimal
-    }
-   */
-
-  const txPayload = sdk.swap.swapPayload({
-    fromCoin: APTOS,
-    toCoin: BTC,
-    fromAmount: output.amount,
-    toAmount: btcAmount,
-    fixedCoin: 'to',  // fixed output coin
-    toAddress: '0xA11ce', // receive `toCoin` address. In the most case, should be the same as sender address
-    slippage: 0.05,   // 5%
-    deadline: 20,     // 20 minutes
-  })
-
-  /**
-    output type: tx payload
+    [{
+      coinX: AptosResourceType
+      coinY: AptosResourceType
+      lpCoin: AptosResourceType
+      value: string
+    }]
    */
 })()
 ```

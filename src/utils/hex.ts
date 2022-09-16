@@ -61,3 +61,12 @@ export function toBuffer(v: any): Buffer {
 export function bufferToHex(buffer: Buffer): string {
   return addHexPrefix(toBuffer(buffer).toString('hex'))
 }
+
+export function hexToString(str: string) {
+  // remove additional 0x prefix
+  if (str.startsWith('0x')) {
+    str = str.substring(2)
+  }
+  const buf = Buffer.from(str, 'hex')
+  return buf.toString('utf8')
+}
