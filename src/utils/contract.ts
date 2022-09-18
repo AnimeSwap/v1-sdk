@@ -92,8 +92,16 @@ export function composeSwapPoolData(address: string) {
   return composeType(address, 'AnimeSwapPoolV1', 'AdminData')
 }
 
+export function composePairInfo(address: string) {
+  return composeType(address, 'AnimeSwapPoolV1', 'PairInfo')
+}
+
 export function composeCoinStore(coinStore: string, lpCoinType: string) {
   return `${coinStore}<${lpCoinType}>`
+}
+
+export function composeLiquidityPool(address: string) {
+  return composeType(address, 'AnimeSwapPoolV1', 'LiquidityPool')
 }
 
 export function extractAddressFromType(type: string) {

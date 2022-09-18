@@ -1,5 +1,6 @@
 import { AptosClient } from 'aptos'
 import { SwapModule } from './modules/SwapModule'
+import { RouteModule } from './modules/RouteModule'
 import { ResourcesModule } from './modules/ResourcesModule'
 import { AptosResourceType } from './types/aptos'
 
@@ -20,11 +21,16 @@ export type SdkOptions = {
 export class SDK {
   protected _client: AptosClient
   protected _swap: SwapModule
+  protected _route: RouteModule
   protected _resources: ResourcesModule
   protected _networkOptions: SdkOptions['networkOptions']
 
   get swap() {
     return this._swap
+  }
+
+  get route() {
+    return this._route
   }
 
   get resources() {
@@ -43,6 +49,7 @@ export class SDK {
     this._networkOptions = options.networkOptions
     this._client = new AptosClient(options.nodeUrl)
     this._swap = new SwapModule(this)
+    this._route = new RouteModule(this)
     this._resources = new ResourcesModule(this)
   }
 }
