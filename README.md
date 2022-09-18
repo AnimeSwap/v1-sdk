@@ -21,7 +21,7 @@ import { SDK } from '@animeswap.org/v1-sdk';
 const sdk = new SDK({
   nodeUrl: 'https://fullnode.devnet.aptoslabs.com', // Node URL
   networkOptions: {
-    nativeToken: '0x1::aptos_coin::AptosCoin', // Type of Native network token
+    nativeCoin: '0x1::aptos_coin::AptosCoin', // Type of Native network coin
     modules: {
       Scripts: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2::AnimeSwapPoolV1', // This module is used for Swap
       CoinInfo: '0x1::coin::CoinInfo', // Type of base CoinInfo module
@@ -43,7 +43,10 @@ const sdk = new SDK({
 })()
 ```
 
-### Add liquidity rate calculation and tx payload. If pair not exists, tx will create pair first
+### Add liquidity rate calculation and tx payload.
+
+If pair not exists, tx will create pair first
+
 ```typescript
 (async () => {
   const APTOS = '0x1::aptos_coin::AptosCoin'
@@ -138,7 +141,10 @@ const sdk = new SDK({
 })()
 ```
 
-### Swap (exact in) rate calculation and tx payload. Swap exact coin to coin mode
+### Swap (exact in) rate calculation and tx payload.
+
+Swap exact coin to coin mode
+
 ```typescript
 (async () => {
   const APTOS = '0x1::aptos_coin::AptosCoin'
@@ -175,7 +181,10 @@ const sdk = new SDK({
 })()
 ```
 
-### Swap (exact out) rate calculation and tx payload. Swap coin to exact coin mode
+### Swap (exact out) rate calculation and tx payload.
+
+Swap coin to exact coin mode
+
 ```typescript
 (async () => {
   const APTOS = '0x1::aptos_coin::AptosCoin'
