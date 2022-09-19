@@ -9,6 +9,7 @@ const AnimeSwapPairInfo = 'PairInfo'
 const AnimeMasterChefModule = 'AnimeMasterChefV1'
 const AnimeMasterChefLPInfo = 'LPInfo'
 const AnimeMasterChefPoolInfo = 'PoolInfo'
+const AnimeMasterChefUserInfo = 'UserInfo'
 const AnimeMasterChefData = 'MasterChefData'
 
 export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
@@ -64,4 +65,8 @@ export function composeMasterChefPoolInfoPrefix(address: string) {
 
 export function composeMasterChefData(address: string) {
   return composeType(address, AnimeMasterChefModule, AnimeMasterChefData)
+}
+
+export function composeMasterChefUserInfo(address: string, coinType: string) {
+  return composeType(address, AnimeMasterChefModule, `${AnimeMasterChefUserInfo}<${coinType}>`)
 }

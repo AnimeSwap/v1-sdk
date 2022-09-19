@@ -42,4 +42,10 @@ describe('Swap Module', () => {
     console.log(output)
     expect(1).toBe(1)
   })
+
+  test('getUserInfo', async () => {
+    const output = await sdk.MasterChef.getUserInfo(sdk.networkOptions.modules.MasterChefDeployerAddress, sdk.networkOptions.modules.AniAddress)
+    console.log(output)
+    expect(1).toBe(1)
+  })
 })

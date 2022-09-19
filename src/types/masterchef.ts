@@ -17,3 +17,8 @@ export type MasterChefData = {
   start_timestamp: string
   total_alloc_point: string
 }
+
+export type MasterChefUserInfo = {
+  amount: string
+  reward_debt: string
+}

@@ -24,6 +24,7 @@ export class ResourcesModule implements IModule {
           return undefined
         }
       }
+      console.log(e)
       throw e
     }
   }
