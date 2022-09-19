@@ -16,18 +16,20 @@ import {
   composeType,
   extractAddressFromType,
   isSortedSymbols,
-  composeLPCoin,
-  composeLP,
-  composeLPCoinType,
-  composeSwapPoolData,
-  composeCoinStore,
-  composePairInfo,
-  composeLiquidityPool,
 } from '../utils/contract'
 import { d } from '../utils/number'
 import Decimal from 'decimal.js'
 import { hexToString } from '../utils/hex'
 import { notEmpty } from '../utils/is'
+import {
+  composeCoinStore,
+  composeLiquidityPool,
+  composeLP,
+  composeLPCoin,
+  composeLPCoinType,
+  composePairInfo,
+  composeSwapPoolData,
+} from '../utils/contractComposeType'
 
 export type AddLiquidityParams = {
   coinX: AptosResourceType
