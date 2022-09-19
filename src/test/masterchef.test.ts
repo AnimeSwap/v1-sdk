@@ -36,4 +36,10 @@ describe('Swap Module', () => {
     console.log(output)
     expect(output.length).toBeGreaterThan(0)
   })
+
+  test('getMasterChefData', async () => {
+    const output = await sdk.MasterChef.getMasterChefData()
+    console.log(output)
+    expect(1).toBe(1)
+  })
 })

@@ -9,3 +9,11 @@ export type MasterChefPoolInfo = {
   alloc_point: string
   last_reward_timestamp: string
 }
+
+export type MasterChefData = {
+  bonus_multiplier: string
+  dev_percent: string
+  per_second_ANI: string
+  start_timestamp: string
+  total_alloc_point: string
+}

@@ -1,9 +1,14 @@
 import { SDK } from '../sdk'
 import { IModule } from '../interfaces/IModule'
-import { composeMasterChefPoolInfo, composeMasterChefLpList, composeMasterChefPoolInfoPrefix } from '../utils/contractComposeType'
+import {
+  composeMasterChefPoolInfo,
+  composeMasterChefLpList,
+  composeMasterChefPoolInfoPrefix,
+  composeMasterChefData,
+} from '../utils/contractComposeType'
 import { AptosResourceType, AptosTypeInfo } from '../types/aptos'
 import { hexToString } from '../utils/hex'
-import { MasterChefLPInfo, MasterChefPoolInfo } from '../types/masterchef'
+import { MasterChefData, MasterChefLPInfo, MasterChefPoolInfo } from '../types/masterchef'
 import { notEmpty } from '../utils/is'
 
 export type allPoolInfoList = {
@@ -71,6 +76,19 @@ export class MasterChefModule implements IModule {
       }
     }).filter(notEmpty)
     return filteredResource
+  }
+
+  async getMasterChefData(): Promise<MasterChefData> {
+    const { modules } = this.sdk.networkOptions
+    const dataType = composeMasterChefData(modules.MasterChefDeployerAddress)
+    const resource = await this.sdk.resources.fetchAccountResource<MasterChefData>(
+      modules.MasterChefDeployerAddress,
+      dataType,
+    )
+    if (!resource) {
+      throw new Error(`resource (${dataType}) not found`)
+    }
+    return resource.data
   }
 }
 
