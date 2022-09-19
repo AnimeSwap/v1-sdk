@@ -8,6 +8,7 @@ const AnimeSwapAdminData = 'AdminData'
 const AnimeSwapPairInfo = 'PairInfo'
 const AnimeMasterChefModule = 'AnimeMasterChefV1'
 const AnimeMasterChefLPInfo = 'LPInfo'
+const AnimeMasterChefPoolInfo = 'PoolInfo'
 
 export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
   const isSorted = isSortedSymbols(coin_x, coin_y)
@@ -51,4 +52,11 @@ export function composeLiquidityPool(address: string) {
 export function composeMasterChefLpList(address: string) {
   return composeType(address, AnimeMasterChefModule, AnimeMasterChefLPInfo)
 }
+
+export function composeMasterChefPoolInfo(address: string, coinType: string) {
+  return composeType(address, AnimeMasterChefModule, `${AnimeMasterChefPoolInfo}<${coinType}>`)
+}
   
+export function composeMasterChefPoolInfoPrefix(address: string) {
+  return composeType(address, AnimeMasterChefModule, AnimeMasterChefPoolInfo)
+}
