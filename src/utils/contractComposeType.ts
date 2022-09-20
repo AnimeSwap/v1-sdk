@@ -70,3 +70,7 @@ export function composeMasterChefData(address: string) {
 export function composeMasterChefUserInfo(address: string, coinType: string) {
   return composeType(address, AnimeMasterChefModule, `${AnimeMasterChefUserInfo}<${coinType}>`)
 }
+
+export function composeMasterChefUserInfoPrefix(address: string) {
+  return composeType(address, AnimeMasterChefModule, AnimeMasterChefUserInfo)
+}
