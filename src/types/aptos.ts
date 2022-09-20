@@ -54,6 +54,12 @@ export type AptosCoinStoreResource = {
   }
 }
 
+export type AptosTypeInfo = {
+  account_address: AptosResourceType
+  module_name: AptosResourceType
+  struct_name: AptosResourceType
+}
+
 export type EntryFunctionPayload = {
   type: 'entry_function_payload'
   function: string

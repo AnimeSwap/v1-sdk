@@ -16,18 +16,20 @@ import {
   composeType,
   extractAddressFromType,
   isSortedSymbols,
-  composeLPCoin,
-  composeLP,
-  composeLPCoinType,
-  composeSwapPoolData,
-  composeCoinStore,
-  composePairInfo,
-  composeLiquidityPool,
 } from '../utils/contract'
 import { d } from '../utils/number'
 import Decimal from 'decimal.js'
 import { hexToString } from '../utils/hex'
 import { notEmpty } from '../utils/is'
+import {
+  composeCoinStore,
+  composeLiquidityPool,
+  composeLP,
+  composeLPCoin,
+  composeLPCoinType,
+  composePairInfo,
+  composeSwapPoolData,
+} from '../utils/contractComposeType'
 
 export type AddLiquidityParams = {
   coinX: AptosResourceType
@@ -417,10 +419,10 @@ export class SwapModule implements IModule {
       address
     )
     if (!resources) {
-      throw new Error(`resources (${resources}) not found`)
+      throw new Error('resources not found')
     }
     const lpCoinType = composeLPCoinType(modules.DeployerAddress)
-    const regexStr = modules.CoinStore + '<(' + lpCoinType + '<(.+), ?(.+)>)>'
+    const regexStr = `^${modules.CoinStore}<(${lpCoinType}<(.+), ?(.+)>)>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
       const regexResult = regex.exec(resource.type)
@@ -488,10 +490,10 @@ export class SwapModule implements IModule {
       modules.ResourceAccountAddress
     )
     if (!resources) {
-      throw new Error(`resources (${resources}) not found`)
+      throw new Error('resources not found')
     }
     const lpCoinType = composeLiquidityPool(modules.DeployerAddress)
-    const regexStr = `${lpCoinType}<(.+?), ?(.+?), ?(.+)>`
+    const regexStr = `^${lpCoinType}<(.+?), ?(.+?), ?(.+)>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
       const regexResult = regex.exec(resource.type)

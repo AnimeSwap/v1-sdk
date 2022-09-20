@@ -11,7 +11,8 @@ import {
   LiquidityPoolResource,
   withSlippage,
 } from './SwapModule'
-import { composeSwapPoolData, composeType } from '../utils/contract'
+import { composeType } from '../utils/contract'
+import { composeSwapPoolData } from '../utils/contractComposeType'
 import {
   SwapPoolData,
 } from '../types/swap'
