@@ -18,19 +18,7 @@ The typescript SDK for [AnimeSwap](https://animeswap.org) v1 protocol.
 ```typescript
 import { SDK } from '@animeswap.org/v1-sdk';
 
-const sdk = new SDK({
-  nodeUrl: 'https://fullnode.devnet.aptoslabs.com', // Node URL
-  networkOptions: {
-    nativeCoin: '0x1::aptos_coin::AptosCoin', // Type of Native network coin
-    modules: {
-      Scripts: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2::AnimeSwapPoolV1', // This module is used for Swap
-      CoinInfo: '0x1::coin::CoinInfo', // Type of base CoinInfo module
-      CoinStore: '0x1::coin::CoinStore', // Type of base CoinStore module
-      DeployerAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2',  // Swap deployer address
-      ResourceAccountAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2', // Swap resource account address
-    },
-  }
-})
+const sdk = new SDK('https://fullnode.devnet.aptoslabs.com')
 ```
 
 ### Is pair exist

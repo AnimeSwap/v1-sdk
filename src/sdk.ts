@@ -56,7 +56,24 @@ export class SDK {
     return this._networkOptions
   }
 
-  constructor(options: SdkOptions) {
+  constructor(nodeUrl: string) {
+    const options = {
+      nodeUrl,
+      networkOptions: {
+        nativeCoin: '0x1::aptos_coin::AptosCoin',
+        modules: {
+          Scripts: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2::AnimeSwapPoolV1',
+          CoinInfo: '0x1::coin::CoinInfo',
+          CoinStore: '0x1::coin::CoinStore',
+          DeployerAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2',
+          ResourceAccountAddress: '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2',
+          AniAddress: '0x3e8c3184eef4aba3a91e2d99a08c47354320bc0b4d3ce7d5216d58ecacc0ef78::AnimeMasterChefV1::ANI',
+          MasterChefScripts: '0x3e8c3184eef4aba3a91e2d99a08c47354320bc0b4d3ce7d5216d58ecacc0ef78::AnimeMasterChefV1',
+          MasterChefDeployerAddress: '0x3e8c3184eef4aba3a91e2d99a08c47354320bc0b4d3ce7d5216d58ecacc0ef78',
+          MasterChefResourceAccountAddress: '0xe4f52c8632301da5eba4529d7e30068f2ac19e0ccf480439bb3858a9b3ec0c8a',
+        },
+      },
+    }
     this._networkOptions = options.networkOptions
     this._client = new AptosClient(options.nodeUrl)
     this._swap = new SwapModule(this)
