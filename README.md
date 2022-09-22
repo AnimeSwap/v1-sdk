@@ -18,7 +18,7 @@ The typescript SDK for [AnimeSwap](https://animeswap.org) v1 protocol.
 ```typescript
 import { SDK } from '@animeswap.org/v1-sdk';
 
-const sdk = new SDK('https://fullnode.devnet.aptoslabs.com')
+const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
 ```
 
 ### Is pair exist

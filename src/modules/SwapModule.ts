@@ -240,20 +240,21 @@ export class SwapModule implements IModule {
     const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
     const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
 
-    const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+    const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
       lpType
     )
+    const task2 = this.getCoinInfo(lpCoin)
+
+    const [lp, lpCoinInfo] = await Promise.all([task1, task2])
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
     }
-
-    const lpCoinInfo = await this.getCoinInfo(lpCoin)
     if (!lpCoinInfo) {
-      throw new Error(`LpCoin (${lpType}) not found`)
+      throw new Error(`LpCoin (${lpCoin}) not found`)
     }
-    const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
 
+    const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
     if (params.amount > lpSupply) {
       throw new Error(`Invalid amount (${params.amount}) value, larger than total lpCoin supply`)
     }
@@ -320,7 +321,6 @@ export class SwapModule implements IModule {
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
     }
-
     if (!swapPoolData) {
       throw new Error(`SwapPoolData (${swapPoolDataType}) not found`)
     }
@@ -509,6 +509,32 @@ export class SwapModule implements IModule {
       throw new Error(`filteredResource (${filteredResource}) not found`)
     }
     return filteredResource
+  }
+
+  async getPricePerLPCoin(params: CoinPair, ledgerVersion?: BigInt | number): Promise<Decimal> {
+    const { modules } = this.sdk.networkOptions
+
+    const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
+    const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
+
+    const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+      modules.ResourceAccountAddress,
+      lpType,
+      ledgerVersion,
+    )
+    const task2 = this.getCoinInfo(lpCoin)
+
+    const [lp, lpCoinInfo] = await Promise.all([task1, task2])
+    if (!lp) {
+      throw new Error(`LiquidityPool (${lpType}) not found`)
+    }
+    if (!lpCoinInfo) {
+      throw new Error(`LpCoin (${lpCoin}) not found`)
+    }
+
+    const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
+    const pricePerLPCoin = d(lp.data.coin_x_reserve).mul(d(lp.data.coin_y_reserve)).sqrt().div(d(lpSupply))
+    return pricePerLPCoin
   }
 }
 
