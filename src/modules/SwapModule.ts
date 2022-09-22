@@ -511,7 +511,7 @@ export class SwapModule implements IModule {
     return filteredResource
   }
 
-  async getPricePerLPCoin(params: CoinPair, ledgerVersion?: BigInt | number): Promise<Decimal> {
+  async getPricePerLPCoin(params: CoinPair, ledgerVersion?: bigint | number): Promise<Decimal> {
     const { modules } = this.sdk.networkOptions
 
     const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)

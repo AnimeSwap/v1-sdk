@@ -14,7 +14,7 @@ export class ResourcesModule implements IModule {
     this._sdk = sdk
   }
 
-  async fetchAccountResource<T = unknown>(accountAddress: string, resourceType: AptosResourceType, ledgerVersion?: BigInt | number): Promise<AptosResource<T> | undefined> {
+  async fetchAccountResource<T = unknown>(accountAddress: string, resourceType: AptosResourceType, ledgerVersion?: bigint | number): Promise<AptosResource<T> | undefined> {
     try {
       const response = await this._sdk.client.getAccountResource(accountAddress, resourceType, {ledgerVersion: ledgerVersion})
       return response as unknown as AptosResource<T>
@@ -29,7 +29,7 @@ export class ResourcesModule implements IModule {
     }
   }
 
-  async fetchAccountResources<T = unknown>(accountAddress: string, ledgerVersion?: BigInt | number): Promise<AptosResource<T>[] | undefined> {
+  async fetchAccountResources<T = unknown>(accountAddress: string, ledgerVersion?: bigint | number): Promise<AptosResource<T>[] | undefined> {
     try {
       const response = await this._sdk.client.getAccountResources(accountAddress, {ledgerVersion: ledgerVersion})
       return response as unknown as AptosResource<T>[]
