@@ -71,6 +71,15 @@ describe('Swap Module', () => {
     expect(Number(output)).toBeGreaterThanOrEqual(1)
   })
 
+  test('getLPCoinAPR', async () => {
+    const output = await sdk.swap.getLPCoinAPR({
+      coinX: CoinsMapping.APTOS,
+      coinY: CoinsMapping.BTC,
+    })
+    console.log(output)
+    expect(1).toBe(1)
+  })
+
   test('isPairExist', async () => {
     const output = await sdk.swap.isPairExist(CoinsMapping.APTOS, CoinsMapping.BTC)
     expect(output).toBe(true)

@@ -77,3 +77,27 @@ export type AptosCreateTx = {
   expiration: string
   payload: Payload
 }
+
+export type AptosLedgerInfo = {
+  chain_id: number
+  epoch: string
+  ledger_version: string
+  ledger_timestamp: string
+  oldest_ledger_version: string
+  block_height: string
+  oldest_block_height: string
+}
+
+// BlockMetadataTransaction | StateCheckpointTransaction | UserTransaction
+export type AptosTransaction = {
+  version: string
+  hash: string
+  state_change_hash: string
+  event_root_hash: string
+  state_checkpoint_hash?: string
+  gas_used: string
+  success: boolean
+  vm_status: string
+  accumulator_root_hash: string
+  timestamp: string
+}

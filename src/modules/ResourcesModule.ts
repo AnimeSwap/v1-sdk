@@ -42,4 +42,24 @@ export class ResourcesModule implements IModule {
       throw e
     }
   }
+
+  async fetchLedgerInfo<T = unknown>(): Promise<T> {
+    try {
+      const response = await this._sdk.client.getLedgerInfo()
+      return response as unknown as T
+    } catch (e: unknown) {
+      console.log(e)
+      throw e
+    }
+  }
+
+  async fetchTransactionByVersion<T = unknown>(txnVersion: bigint | number): Promise<T> {
+    try {
+      const response = await this._sdk.client.getTransactionByVersion(txnVersion)
+      return response as unknown as T
+    } catch (e: unknown) {
+      console.log(e)
+      throw e
+    }
+  }
 }
