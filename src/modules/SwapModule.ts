@@ -152,6 +152,11 @@ export type PairInfoResource = {
   pair_list: PairListResource
 }
 
+export type LPCoinAPRReturn = {
+  apr: Decimal
+  windowSeconds: Decimal
+}
+
 export class SwapModule implements IModule {
   protected _sdk: SDK
 
@@ -593,7 +598,7 @@ export class SwapModule implements IModule {
    * @param deltaVersion? calculate apr with this version window. Default: 5000000
    * @returns [apr, queryDeltaTimestampSeconds]
    */
-  async getLPCoinAPR(params: CoinPair, deltaVersion?: string): Promise<[Decimal, Decimal]> {
+  async getLPCoinAPR(params: CoinPair, deltaVersion?: string): Promise<LPCoinAPRReturn> {
     const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
     const timestampNow = ledgerInfo.ledger_timestamp
     const currentLedgerVersion = ledgerInfo.ledger_version
@@ -610,7 +615,10 @@ export class SwapModule implements IModule {
     const [currentPricePerLPCoin, queryPricePerLPCoin, txn] = await Promise.all([task1, task2, task3])
     const deltaTimestamp = d(timestampNow).sub(d(txn.timestamp))
     const apr = currentPricePerLPCoin.sub(queryPricePerLPCoin).div(queryPricePerLPCoin).mul(365*86400*1000*1000).div(deltaTimestamp)
-    return [apr, deltaTimestamp.div(1000000).toDP(0)]
+    return {
+      apr,
+      windowSeconds: deltaTimestamp.div(1000000).toDP(0),
+    }
   }
 }
 
