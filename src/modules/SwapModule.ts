@@ -4,7 +4,9 @@ import {
   address,
   AptosCoinInfoResource,
   AptosCoinStoreResource,
+  AptosLedgerInfo,
   AptosResourceType,
+  AptosTransaction,
   Payload,
 } from '../types/aptos'
 import {
@@ -150,6 +152,11 @@ export type PairInfoResource = {
   pair_list: PairListResource
 }
 
+export type LPCoinAPRReturn = {
+  apr: Decimal
+  windowSeconds: Decimal
+}
+
 export class SwapModule implements IModule {
   protected _sdk: SDK
 
@@ -161,6 +168,12 @@ export class SwapModule implements IModule {
     this._sdk = sdk
   }
 
+  /**
+   * Check if pair exists
+   * @param coinX coinX
+   * @param coinY coinY
+   * @returns if pair exists
+   */
   async isPairExist(coinX: AptosResourceType, coinY: AptosResourceType): Promise<boolean> {
     const { modules } = this.sdk.networkOptions
     const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
@@ -172,6 +185,11 @@ export class SwapModule implements IModule {
     }
   }
 
+  /**
+   * Add liqudity rate, given CoinX, CoinY, fixedCoin and fixedCoin Amount, the function will return meta such as: the other CoinAmount, shareOfPool
+   * @param params AddLiquidityParams
+   * @returns 
+   */
   async addLiquidityRates(params: AddLiquidityParams): Promise<AddLiquidityReturn> {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
@@ -233,6 +251,11 @@ export class SwapModule implements IModule {
     }
   }
 
+  /**
+   * Remove liqudity rate, given CoinX, CoinY, LPCoin Amount, the function will return meta such as: amountX, amountY
+   * @param params RemoveLiquidityParams
+   * @returns 
+   */
   async removeLiquidityRates(params: RemoveLiquidityParams): Promise<RemoveLiquidityReturn> {
     const { modules } = this.sdk.networkOptions
 
@@ -240,20 +263,21 @@ export class SwapModule implements IModule {
     const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
     const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
 
-    const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+    const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
       lpType
     )
+    const task2 = this.getCoinInfo(lpCoin)
+
+    const [lp, lpCoinInfo] = await Promise.all([task1, task2])
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
     }
-
-    const lpCoinInfo = await this.getCoinInfo(lpCoin)
     if (!lpCoinInfo) {
-      throw new Error(`LpCoin (${lpType}) not found`)
+      throw new Error(`LpCoin (${lpCoin}) not found`)
     }
-    const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
 
+    const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
     if (params.amount > lpSupply) {
       throw new Error(`Invalid amount (${params.amount}) value, larger than total lpCoin supply`)
     }
@@ -299,6 +323,12 @@ export class SwapModule implements IModule {
     }
   }
 
+  /**
+   * @deprecated Should use `RouteModule.getRouteSwapExactCoinForCoin` or `RouteModule.getRouteSwapCoinForExactCoin` instead
+   * Calculate direct 2 pair swap rate.
+   * @param params 
+   * @returns 
+   */
   async swapRates(params: SwapRatesParams): Promise<SwapRatesReturn> {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.fromCoin, params.toCoin)
@@ -320,7 +350,6 @@ export class SwapModule implements IModule {
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
     }
-
     if (!swapPoolData) {
       throw new Error(`SwapPoolData (${swapPoolDataType}) not found`)
     }
@@ -413,6 +442,11 @@ export class SwapModule implements IModule {
     return coinInfo
   }
 
+  /**
+   * The function will return all LPCoin with a given address
+   * @param address 
+   * @returns 
+   */
   async getAllLPCoinResourcesByAddress(address: address): Promise<LPCoinResource[]> {
     const { modules } = this.sdk.networkOptions
     const resources = await this.sdk.resources.fetchAccountResources<AptosCoinStoreResource>(
@@ -440,6 +474,11 @@ export class SwapModule implements IModule {
     return filteredResource
   }
 
+  /**
+   * The function will return LPCoin amount with a given address and LPCoin pair
+   * @param params 
+   * @returns 
+   */
   async getLPCoinAmount(params: LPCoinParams) : Promise<LPCoinResource> {
     const { modules } = this.sdk.networkOptions
     const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
@@ -462,6 +501,10 @@ export class SwapModule implements IModule {
     }
   }
 
+  /**
+   * The function will return all pairs created in AnimeSwap, with CoinX and CoinY full name
+   * @returns all pairs
+   */
   async getAllPairs(): Promise<CoinPair[]> {
     const { modules } = this.sdk.networkOptions
     const pairInfoType = composePairInfo(modules.ResourceAccountAddress)
@@ -484,6 +527,10 @@ export class SwapModule implements IModule {
     return ret
   }
 
+  /**
+   * The function will return all pairs created in AnimeSwap, with coin full name and reserve meta
+   * @returns 
+   */
   async getAllLPCoinResourcesWithAdmin(): Promise<LiquidityPoolResource[]> {
     const { modules } = this.sdk.networkOptions
     const resources = await this.sdk.resources.fetchAccountResources<SwapPoolResource>(
@@ -509,6 +556,69 @@ export class SwapModule implements IModule {
       throw new Error(`filteredResource (${filteredResource}) not found`)
     }
     return filteredResource
+  }
+
+  /**
+   * Get price per LPCoin at a given ledger version
+   * The pricePerLPCoin of a new created LPCoin should be equal to `1`, and will increate when getting swap fee
+   * @param params coinPair
+   * @param ledgerVersion? calculate apr with this version window. Default: latest
+   * @returns pricePerLPCoin
+   */
+  async getPricePerLPCoin(params: CoinPair, ledgerVersion?: bigint | number): Promise<Decimal> {
+    const { modules } = this.sdk.networkOptions
+
+    const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
+    const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
+
+    const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+      modules.ResourceAccountAddress,
+      lpType,
+      ledgerVersion,
+    )
+    const task2 = this.getCoinInfo(lpCoin)
+
+    const [lp, lpCoinInfo] = await Promise.all([task1, task2])
+    if (!lp) {
+      throw new Error(`LiquidityPool (${lpType}) not found`)
+    }
+    if (!lpCoinInfo) {
+      throw new Error(`LpCoin (${lpCoin}) not found`)
+    }
+
+    const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
+    const pricePerLPCoin = d(lp.data.coin_x_reserve).mul(d(lp.data.coin_y_reserve)).sqrt().div(d(lpSupply))
+    return pricePerLPCoin
+  }
+
+  /**
+   * Get LPCoin apr at a given ledger verion window
+   * The funciont will return apr and timestamp window
+   * @param params coinPair
+   * @param deltaVersion? calculate apr with this version window. Default: 5000000
+   * @returns [apr, queryDeltaTimestampSeconds]
+   */
+  async getLPCoinAPR(params: CoinPair, deltaVersion?: string): Promise<LPCoinAPRReturn> {
+    const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
+    const timestampNow = ledgerInfo.ledger_timestamp
+    const currentLedgerVersion = ledgerInfo.ledger_version
+    const oldestLedgerVersion = ledgerInfo.oldest_ledger_version
+    const queryDeltaVersion = deltaVersion ? deltaVersion : 5e6.toString()
+    const queryLedgerVersion =
+      d(currentLedgerVersion).sub(queryDeltaVersion).greaterThanOrEqualTo(d(oldestLedgerVersion))
+      ? d(currentLedgerVersion).sub(queryDeltaVersion)
+      : d(oldestLedgerVersion)
+
+    const task1 = this.getPricePerLPCoin(params)
+    const task2 = this.getPricePerLPCoin(params, BigInt(queryLedgerVersion.toString()))
+    const task3 = this.sdk.resources.fetchTransactionByVersion<AptosTransaction>(BigInt(queryLedgerVersion.toString()))
+    const [currentPricePerLPCoin, queryPricePerLPCoin, txn] = await Promise.all([task1, task2, task3])
+    const deltaTimestamp = d(timestampNow).sub(d(txn.timestamp))
+    const apr = currentPricePerLPCoin.sub(queryPricePerLPCoin).div(queryPricePerLPCoin).mul(365*86400*1000*1000).div(deltaTimestamp)
+    return {
+      apr,
+      windowSeconds: deltaTimestamp.div(1000000).toDP(0),
+    }
   }
 }
 

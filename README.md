@@ -18,7 +18,7 @@ The typescript SDK for [AnimeSwap](https://animeswap.org) v1 protocol.
 ```typescript
 import { SDK } from '@animeswap.org/v1-sdk';
 
-const sdk = new SDK('https://fullnode.devnet.aptoslabs.com')
+const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
 ```
 
 ### Is pair exist
@@ -249,6 +249,27 @@ Swap coin to exact coin mode
       coinY: AptosResourceType
       lpCoin: AptosResourceType
       value: string
+    }
+   */
+})()
+```
+
+### Get LPCoin apr
+```typescript
+(async () => {
+  const APTOS = '0x1::aptos_coin::AptosCoin'
+  const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
+
+  const output = await sdk.swap.getLPCoinAPR({
+    coinX: APTOS,
+    coinY: BTC,
+  })
+
+  /**
+    output type:
+    {
+      apr: Decimal
+      windowSeconds: Decimal
     }
    */
 })()
