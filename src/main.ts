@@ -1,8 +1,9 @@
-import { SDK, SdkOptions } from './sdk'
+import { SDK, SdkOptions, NetworkType } from './sdk'
 
 export {
   SDK,
   SdkOptions,
+  NetworkType,
 }
 export * as SwapModule from './modules/SwapModule'
 export * as ResourcesModule from './modules/ResourcesModule'
