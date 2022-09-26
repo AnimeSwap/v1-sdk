@@ -208,7 +208,7 @@ export class RouteModule implements IModule {
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
     const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
-      modules.DeployerAddress,
+      modules.ResourceAccountAddress,
       swapPoolDataType
     )
     const [pairList, swapPoolData] = await Promise.all([task1, task2])
@@ -238,7 +238,7 @@ export class RouteModule implements IModule {
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
     const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
-      modules.DeployerAddress,
+      modules.ResourceAccountAddress,
       swapPoolDataType
     )
     const [pairList, swapPoolData] = await Promise.all([task1, task2])

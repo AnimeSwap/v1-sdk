@@ -2,8 +2,12 @@ import { BigNumber } from './common'
 import { AptosResourceType } from './aptos'
 
 export type SwapPoolResource = {
-  coin_x_reserve: string
-  coin_y_reserve: string
+  coin_x_reserve: {
+    value: string
+  }
+  coin_y_reserve: {
+    value: string
+  }
   k_last: string
   last_block_timestamp: string
   last_price_x_cumulative: string

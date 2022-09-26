@@ -3,7 +3,7 @@ import { d, decimalsMultiplier } from '../utils/number'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
-  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC',
+  BTC: '0xb8d9d622a4b32e47371a91bce42719f0a1eeb18c7bec78155b4231854ea5f538::TestCoinsV1::BTC',
 }
 
 const SenderAddress = '0xa1ice'
@@ -75,7 +75,7 @@ describe('Swap Module', () => {
     const output = await sdk.swap.getLPCoinAPR({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
-    })
+    }, 1e3.toString())
     console.log(output)
     expect(1).toBe(1)
   })
