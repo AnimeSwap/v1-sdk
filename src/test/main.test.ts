@@ -68,7 +68,7 @@ describe('Swap Module', () => {
       coinY: CoinsMapping.BTC,
     })
     console.log(output)
-    expect(Number(output)).toBeGreaterThanOrEqual(1)
+    expect(Number(output)).toBeGreaterThanOrEqual(0)
   })
 
   test('getLPCoinAPR', async () => {
