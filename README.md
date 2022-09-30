@@ -7,7 +7,8 @@
 
 The typescript SDK for [AnimeSwap](https://animeswap.org) v1 protocol.
 
-[SDK documents](https://docs.animeswap.org)
+* [SDK documents](https://docs.animeswap.org/docs/sdk)
+* [Contracts documents](https://docs.animeswap.org/docs/contracts)
 
 # Installation
 
