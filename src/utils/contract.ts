@@ -22,6 +22,9 @@ function compare(symbolX: string, symbolY: string) {
   const iX = symbolX.length
   const iY = symbolY.length
 
+  const lengthCmp = cmp(iX, iY)
+  if (lengthCmp !== 0) return lengthCmp
+
   const minLength = Math.min(iX, iY)
   let index = 0
   while (index < minLength - 1) {
