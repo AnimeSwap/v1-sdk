@@ -633,7 +633,7 @@ export function getCoinOutWithFees(
   const coinInAfterFees = coinInVal.mul(feeMultiplier)
   const newReservesInSize = reserveInSize.mul(feeScale).plus(coinInAfterFees)
 
-  return coinInAfterFees.mul(reserveOutSize).div(newReservesInSize).toDP(0)
+  return coinInAfterFees.mul(reserveOutSize).div(newReservesInSize).floor()
 }
 
 export function getCoinInWithFees(
@@ -646,7 +646,7 @@ export function getCoinInWithFees(
   const feeMultiplier = feeScale.sub(feePct)
   const newReservesOutSize = reserveOutSize.sub(coinOutVal).mul(feeMultiplier)
 
-  return coinOutVal.mul(feeScale).mul(reserveInSize).div(newReservesOutSize).plus(1).toDP(0)
+  return coinOutVal.mul(feeScale).mul(reserveInSize).div(newReservesOutSize).plus(1).floor()
 }
 
 export function withSlippage(value: Decimal.Instance, slippage: Decimal.Instance, mode: 'plus' | 'minus') {
@@ -658,5 +658,5 @@ function quote(
   reserveX: Decimal.Instance,
   reserveY: Decimal.Instance,
 ) {
-  return amountX.mul(reserveY).div(reserveX).toDP(0)
+  return amountX.mul(reserveY).div(reserveX).floor()
 }

@@ -295,7 +295,7 @@ export class RouteModule implements IModule {
 
     const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
 
-    const args = [modules.ResourceAccountAddress, fromAmount, d(toAmount).toString(), toAddress, d(deadlineArgs).toString()]
+    const args = [fromAmount, d(toAmount).toString(), toAddress, d(deadlineArgs).toString()]
 
     return {
       type: 'entry_function_payload',
@@ -337,7 +337,7 @@ export class RouteModule implements IModule {
 
     const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
 
-    const args = [modules.ResourceAccountAddress, toAmount, d(fromAmount).toString(), toAddress, d(deadlineArgs).toString()]
+    const args = [toAmount, d(fromAmount).toString(), toAddress, d(deadlineArgs).toString()]
 
     return {
       type: 'entry_function_payload',
