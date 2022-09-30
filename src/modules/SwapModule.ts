@@ -176,7 +176,7 @@ export class SwapModule implements IModule {
    */
   async isPairExist(coinX: AptosResourceType, coinY: AptosResourceType): Promise<boolean> {
     const { modules } = this.sdk.networkOptions
-    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
     try {
       await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
       return true
@@ -193,15 +193,15 @@ export class SwapModule implements IModule {
   async addLiquidityRates(params: AddLiquidityParams): Promise<AddLiquidityReturn> {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
-    const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
     const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
 
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
     }
 
-    const coinXReserve = lp.data.coin_x_reserve
-    const coinYReserve = lp.data.coin_y_reserve
+    const coinXReserve = lp.data.coin_x_reserve.value
+    const coinYReserve = lp.data.coin_y_reserve.value
 
     const [reserveX, reserveY] = isSorted
       ? [d(coinXReserve), d(coinYReserve)]
@@ -260,8 +260,8 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
 
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
-    const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
-    const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, params.coinX, params.coinY)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -282,8 +282,8 @@ export class SwapModule implements IModule {
       throw new Error(`Invalid amount (${params.amount}) value, larger than total lpCoin supply`)
     }
 
-    const coinXReserve = lp.data.coin_x_reserve
-    const coinYReserve = lp.data.coin_y_reserve
+    const coinXReserve = lp.data.coin_x_reserve.value
+    const coinYReserve = lp.data.coin_y_reserve.value
 
     const [reserveX, reserveY] = isSorted
       ? [d(coinXReserve), d(coinYReserve)]
@@ -332,7 +332,7 @@ export class SwapModule implements IModule {
   async swapRates(params: SwapRatesParams): Promise<SwapRatesReturn> {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.fromCoin, params.toCoin)
-    const lpType = composeLP(modules.DeployerAddress, params.fromCoin, params.toCoin)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.fromCoin, params.toCoin)
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
@@ -341,7 +341,7 @@ export class SwapModule implements IModule {
     )
 
     const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
-      modules.DeployerAddress,
+      modules.ResourceAccountAddress,
       swapPoolDataType
     )
 
@@ -354,8 +354,8 @@ export class SwapModule implements IModule {
       throw new Error(`SwapPoolData (${swapPoolDataType}) not found`)
     }
 
-    const coinXReserve = lp.data.coin_x_reserve
-    const coinYReserve = lp.data.coin_y_reserve
+    const coinXReserve = lp.data.coin_x_reserve.value
+    const coinYReserve = lp.data.coin_y_reserve.value
 
     const [reserveFrom, reserveTo] = isSorted
       ? [d(coinXReserve), d(coinYReserve)]
@@ -455,7 +455,7 @@ export class SwapModule implements IModule {
     if (!resources) {
       throw new Error('resources not found')
     }
-    const lpCoinType = composeLPCoinType(modules.DeployerAddress)
+    const lpCoinType = composeLPCoinType(modules.ResourceAccountAddress)
     const regexStr = `^${modules.CoinStore}<(${lpCoinType}<(.+), ?(.+)>)>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
@@ -481,7 +481,7 @@ export class SwapModule implements IModule {
    */
   async getLPCoinAmount(params: LPCoinParams) : Promise<LPCoinResource> {
     const { modules } = this.sdk.networkOptions
-    const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, params.coinX, params.coinY)
     const coinStoreLP = composeCoinStore(modules.CoinStore, lpCoin)
 
     const lpCoinStore = await this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(
@@ -507,7 +507,7 @@ export class SwapModule implements IModule {
    */
   async getAllPairs(): Promise<CoinPair[]> {
     const { modules } = this.sdk.networkOptions
-    const pairInfoType = composePairInfo(modules.ResourceAccountAddress)
+    const pairInfoType = composePairInfo(modules.DeployerAddress)
     const pairInfo = await this.sdk.resources.fetchAccountResource<PairInfoResource>(
       modules.ResourceAccountAddress,
       pairInfoType,
@@ -548,8 +548,8 @@ export class SwapModule implements IModule {
       return {
         coinX: regexResult[1],
         coinY: regexResult[2],
-        coinXReserve: resource.data.coin_x_reserve,
-        coinYReserve: resource.data.coin_y_reserve,
+        coinXReserve: resource.data.coin_x_reserve.value,
+        coinYReserve: resource.data.coin_y_reserve.value,
       }
     }).filter(notEmpty)
     if (!filteredResource) {
@@ -568,8 +568,8 @@ export class SwapModule implements IModule {
   async getPricePerLPCoin(params: CoinPair, ledgerVersion?: bigint | number): Promise<Decimal> {
     const { modules } = this.sdk.networkOptions
 
-    const lpCoin = composeLPCoin(modules.DeployerAddress, params.coinX, params.coinY)
-    const lpType = composeLP(modules.DeployerAddress, params.coinX, params.coinY)
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, params.coinX, params.coinY)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -587,7 +587,7 @@ export class SwapModule implements IModule {
     }
 
     const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
-    const pricePerLPCoin = d(lp.data.coin_x_reserve).mul(d(lp.data.coin_y_reserve)).sqrt().div(d(lpSupply))
+    const pricePerLPCoin = d(lp.data.coin_x_reserve.value).mul(d(lp.data.coin_y_reserve.value)).sqrt().div(d(lpSupply))
     return pricePerLPCoin
   }
 

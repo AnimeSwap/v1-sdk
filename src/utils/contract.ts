@@ -22,18 +22,20 @@ function compare(symbolX: string, symbolY: string) {
   const iX = symbolX.length
   const iY = symbolY.length
 
-  const lenCmp = cmp(iX, iY)
-  if (lenCmp != EQUAL) return lenCmp
+  const lengthCmp = cmp(iX, iY)
+  if (lengthCmp !== 0) return lengthCmp
+
+  const minLength = Math.min(iX, iY)
   let index = 0
-  while (index < iX - 1) {
-    const elemCmp = cmp(symbolX.charCodeAt(iX), symbolY.charCodeAt(iY))
+  while (index < minLength - 1) {
+    const elemCmp = cmp(symbolX.charCodeAt(index), symbolY.charCodeAt(index))
     if (elemCmp !== 0) {
       return elemCmp
     }
     index++
   }
 
-  return EQUAL
+  return cmp(iX, iY)
 }
 
 export function isSortedSymbols(symbolX: string, symbolY: string) {

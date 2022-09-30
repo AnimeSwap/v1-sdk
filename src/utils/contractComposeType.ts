@@ -21,13 +21,13 @@ export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
   }
 }
 
-export function composeLP(address: string, coin_x: string, coin_y: string) {
+export function composeLP(deployerAddress: string, raAddress: string, coin_x: string, coin_y: string) {
   const isSorted = isSortedSymbols(coin_x, coin_y)
-  const lpCoin = composeLPCoin(address, coin_x, coin_y)
+  const lpCoin = composeLPCoin(raAddress, coin_x, coin_y)
   if (isSorted) {
-    return composeType(address, AnimeSwapModule, AnimeSwapLiquidityPool, [coin_x, coin_y, lpCoin])
+    return composeType(deployerAddress, AnimeSwapModule, AnimeSwapLiquidityPool, [coin_x, coin_y, lpCoin])
   } else {
-    return composeType(address, AnimeSwapModule, AnimeSwapLiquidityPool, [coin_y, coin_x, lpCoin])
+    return composeType(deployerAddress, AnimeSwapModule, AnimeSwapLiquidityPool, [coin_y, coin_x, lpCoin])
   }
 }
 
