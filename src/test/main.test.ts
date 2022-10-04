@@ -1,5 +1,5 @@
 import SDK from '../main'
-import { d, decimalsMultiplier } from '../utils/number'
+import { mulDecimals, divDecimals } from '../utils/number'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
@@ -11,18 +11,6 @@ const SenderAddress = '0xa1ice'
 const CoinInfo: { [key: string]: { decimals: number } } = {
   APTOS: { decimals: 8 },
   BTC: { decimals: 8 },
-}
-
-function convertToDecimals(amount: number | string, coin: string) {
-  const mul = decimalsMultiplier(CoinInfo[coin]?.decimals || 0)
-
-  return d(amount).mul(mul)
-}
-
-function prettyAmount(amount: number | string, coin: string) {
-  const mul = decimalsMultiplier(CoinInfo[coin]?.decimals || 0)
-
-  return d(amount).div(mul)
 }
 
 describe('Swap Module', () => {
@@ -89,7 +77,7 @@ describe('Swap Module', () => {
     const output = await sdk.swap.swapRates({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
-      amount: convertToDecimals(1, 'APTOS'),
+      amount: mulDecimals(1, CoinInfo['APTOS'].decimals),
       fixedCoin: 'from',
       slippage: 0.05,
     })
@@ -98,18 +86,18 @@ describe('Swap Module', () => {
 
     console.log({
       amount: output.amount,
-      pretty: prettyAmount(output.amount.toString(), 'BTC'),
+      pretty: divDecimals(output.amount, CoinInfo['BTC'].decimals),
     })
 
     expect(1).toBe(1)
   })
 
   test('swapRates #2', async () => {
-    console.log(convertToDecimals('0.00001', 'BTC'),)
+    console.log(mulDecimals('0.00001', CoinInfo['APTOS'].decimals))
     const output = await sdk.swap.swapRates({
       fromCoin: CoinsMapping.BTC,
       toCoin: CoinsMapping.APTOS,
-      amount: convertToDecimals('1', 'APTOS'),
+      amount: mulDecimals(1, CoinInfo['APTOS'].decimals),
       fixedCoin: 'to',
       slippage: 0.05,
     })
@@ -118,19 +106,19 @@ describe('Swap Module', () => {
 
     console.log({
       amount: output.amount,
-      pretty: prettyAmount(output.amount.toString(), 'BTC'),
+      pretty: divDecimals(output.amount, CoinInfo['BTC'].decimals),
     })
 
     expect(1).toBe(1)
   })
 
   test('swapPayload (coin_to_exact_coin)', async () => {
-    console.log(convertToDecimals('0.001', 'BTC'))
+    console.log(mulDecimals('0.001', CoinInfo['BTC'].decimals))
     const output = sdk.swap.swapPayload({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
-      fromAmount: convertToDecimals('0.116831', 'APTOS'),
-      toAmount: convertToDecimals('0.001', 'BTC'),
+      fromAmount: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
+      toAmount: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       fixedCoin: 'to',
       toAddress: SenderAddress,
       slippage: 0.05,
@@ -143,12 +131,12 @@ describe('Swap Module', () => {
   })
 
   test('swapPayload (exact_coin_to_coin)', async () => {
-    console.log(convertToDecimals('1', 'APTOS'))
+    console.log(mulDecimals('1', CoinInfo['APTOS'].decimals))
     const output = sdk.swap.swapPayload({
       fromCoin: CoinsMapping.APTOS,
       toCoin: CoinsMapping.BTC,
-      fromAmount: convertToDecimals('1', 'APTOS'),
-      toAmount: convertToDecimals('0.01584723', 'BTC'),
+      fromAmount: mulDecimals('1', CoinInfo['APTOS'].decimals),
+      toAmount: mulDecimals('0.01584723', CoinInfo['BTC'].decimals),
       fixedCoin: 'from',
       toAddress: SenderAddress,
       slippage: 0.05,
@@ -165,25 +153,25 @@ describe('Swap Module', () => {
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       fixedCoin: 'X',
-      amount: convertToDecimals(1, 'APTOS'),
+      amount:  mulDecimals(1, CoinInfo['APTOS'].decimals),
     })
 
     console.log(output)
     console.log({
       amount: output.amount,
-      pretty: prettyAmount(output.amount.toString(), 'BTC'),
+      pretty:  divDecimals(output.amount, CoinInfo['BTC'].decimals),
     })
 
     expect(1).toBe(1)
   })
 
   test('addLiquidityPayload', async () => {
-    console.log(convertToDecimals('0.001', 'BTC'))
+    console.log(mulDecimals('0.001', CoinInfo['BTC'].decimals))
     const output = sdk.swap.addLiquidityPayload({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
-      amountX: convertToDecimals('0.116831', 'APTOS'),
-      amountY: convertToDecimals('0.001', 'BTC'),
+      amountX: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
+      amountY: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       slippage: 0.05,
       deadline: 20,
     })
@@ -210,8 +198,8 @@ describe('Swap Module', () => {
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
       amount: 1000,
-      amountXDesired: convertToDecimals('0.116831', 'APTOS'),
-      amountYDesired: convertToDecimals('0.001', 'BTC'),
+      amountXDesired: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
+      amountYDesired: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       slippage: 0.05,
       deadline: 20,
     })
