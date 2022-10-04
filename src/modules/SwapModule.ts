@@ -241,12 +241,12 @@ export class SwapModule implements IModule {
 
     const deadline = minsToDeadline(params.deadline)
 
-    const args = [modules.ResourceAccountAddress, amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
+    const args = [amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
 
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }
@@ -315,12 +315,12 @@ export class SwapModule implements IModule {
     
     const deadline = minsToDeadline(params.deadline)
     
-    const args = [modules.ResourceAccountAddress, d(params.amount).toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
+    const args = [d(params.amount).toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
 
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }
@@ -425,12 +425,12 @@ export class SwapModule implements IModule {
 
     const deadline = minsToDeadline(params.deadline)
 
-    const args = [modules.ResourceAccountAddress, frontAmount.toString(), backAmount.toString(), params.toAddress, deadline.toString()]
+    const args = [frontAmount.toString(), backAmount.toString(), params.toAddress, deadline.toString()]
 
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }
