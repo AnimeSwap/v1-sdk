@@ -19,7 +19,7 @@ import {
   extractAddressFromType,
   isSortedSymbols,
 } from '../utils/contract'
-import { d } from '../utils/number'
+import { d, minsToDeadline } from '../utils/number'
 import Decimal from 'decimal.js'
 import { hexToString } from '../utils/hex'
 import { notEmpty } from '../utils/is'
@@ -52,8 +52,8 @@ export type AddLiquidityPayload = {
   coinY: AptosResourceType
   amountX: BigNumber
   amountY: BigNumber
-  slippage: number
-  deadline: number // minutes
+  slippage: BigNumber
+  deadline: BigNumber // minutes
 }
 
 export type RemoveLiquidityParams = {
@@ -73,8 +73,8 @@ export type RemoveLiquidityPayload = {
   amount: BigNumber
   amountXDesired: BigNumber
   amountYDesired: BigNumber
-  slippage: number
-  deadline: number // minutes
+  slippage: BigNumber
+  deadline: BigNumber // minutes
 }
 
 export type SwapRatesParams = {
@@ -82,7 +82,7 @@ export type SwapRatesParams = {
   toCoin: AptosResourceType
   amount: BigNumber
   fixedCoin: 'from' | 'to'
-  slippage: number
+  slippage: BigNumber
 }
 
 export type SwapRatesReturn = {
@@ -100,8 +100,8 @@ export type SwapPayload = {
   toAmount: BigNumber
   fixedCoin: 'from' | 'to'
   toAddress: AptosResourceType
-  slippage: number
-  deadline: number // minutes
+  slippage: BigNumber
+  deadline: BigNumber // minutes
 }
 
 export type LPCoinResource = {
@@ -234,19 +234,19 @@ export class SwapModule implements IModule {
       params.coinY,
     ]
 
-    const amountXDesired = params.amountX
-    const amountYDesired = params.amountY
+    const amountXDesired = d(params.amountX)
+    const amountYDesired = d(params.amountY)
     const amountXMin = withSlippage(d(params.amountX), d(params.slippage), 'minus')
     const amountYMin = withSlippage(d(params.amountY), d(params.slippage), 'minus')
 
-    const deadline = Math.floor(Date.now() / 1000) + params.deadline * 60
+    const deadline = minsToDeadline(params.deadline)
 
-    const args = [modules.ResourceAccountAddress, d(amountXDesired).toString(), d(amountYDesired).toString(), d(amountXMin).toString(), d(amountYMin).toString(), d(deadline).toString()]
+    const args = [amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
 
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }
@@ -299,7 +299,7 @@ export class SwapModule implements IModule {
   }
 
   removeLiquidityPayload(params: RemoveLiquidityPayload): Payload {
-    if (params.slippage >= 1 || params.slippage <= 0) {
+    if (d(params.slippage).greaterThanOrEqualTo(1) || d(params.slippage).lessThanOrEqualTo(0)) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
     const { modules } = this.sdk.networkOptions
@@ -312,13 +312,15 @@ export class SwapModule implements IModule {
 
     const amountXMin = withSlippage(d(params.amountXDesired), d(params.slippage), 'minus')
     const amountYMin = withSlippage(d(params.amountYDesired), d(params.slippage), 'minus')
-    const deadline = Math.floor(Date.now() / 1000) + params.deadline * 60
-    const args = [modules.ResourceAccountAddress, d(params.amount).toString(), d(amountXMin).toString(), d(amountYMin).toString(), d(deadline).toString()]
+    
+    const deadline = minsToDeadline(params.deadline)
+    
+    const args = [d(params.amount).toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
 
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }
@@ -396,7 +398,7 @@ export class SwapModule implements IModule {
   }
 
   swapPayload(params: SwapPayload): Payload {
-    if (params.slippage >= 1 || params.slippage <= 0) {
+    if (d(params.slippage).greaterThanOrEqualTo(1) || d(params.slippage).lessThanOrEqualTo(0)) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
 
@@ -414,21 +416,21 @@ export class SwapModule implements IModule {
 
     const frontAmount =
       params.fixedCoin === 'from'
-        ? params.fromAmount
-        : params.toAmount
+        ? d(params.fromAmount)
+        : d(params.toAmount)
     const backAmount =
       params.fixedCoin === 'to'
         ? withSlippage(d(params.fromAmount), d(params.slippage), 'plus')
         : withSlippage(d(params.toAmount), d(params.slippage), 'minus')
 
-    const deadline = Math.floor(Date.now() / 1000) + params.deadline * 60
+    const deadline = minsToDeadline(params.deadline)
 
-    const args = [modules.ResourceAccountAddress, d(frontAmount).toString(), d(backAmount).toString(), params.toAddress, d(deadline).toString()]
+    const args = [frontAmount.toString(), backAmount.toString(), params.toAddress, deadline.toString()]
 
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }

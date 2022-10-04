@@ -300,7 +300,7 @@ export class RouteModule implements IModule {
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }
@@ -342,7 +342,7 @@ export class RouteModule implements IModule {
     return {
       type: 'entry_function_payload',
       function: functionName,
-      typeArguments: typeArguments,
+      type_arguments: typeArguments,
       arguments: args,
     }
   }

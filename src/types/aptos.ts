@@ -63,7 +63,7 @@ export type AptosTypeInfo = {
 export type EntryFunctionPayload = {
   type: 'entry_function_payload'
   function: string
-  typeArguments: string[]
+  type_arguments: string[]
   arguments: string[]
 }
 
