@@ -191,6 +191,8 @@ export class SwapModule implements IModule {
    * @returns 
    */
   async addLiquidityRates(params: AddLiquidityParams): Promise<AddLiquidityReturn> {
+    params.amount = d(params.amount)
+
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
     const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
@@ -200,44 +202,45 @@ export class SwapModule implements IModule {
       throw new Error(`LiquidityPool (${lpType}) not found`)
     }
 
-    const coinXReserve = lp.data.coin_x_reserve.value
-    const coinYReserve = lp.data.coin_y_reserve.value
+    const coinXReserve = d(lp.data.coin_x_reserve.value)
+    const coinYReserve = d(lp.data.coin_y_reserve.value)
 
     const [reserveX, reserveY] = isSorted
-      ? [d(coinXReserve), d(coinYReserve)]
-      : [d(coinYReserve), d(coinXReserve)]
+      ? [coinXReserve, coinYReserve]
+      : [coinYReserve, coinXReserve]
 
     const outputAmount =
       params.fixedCoin == 'X'
-        ? quote(d(params.amount), reserveX, reserveY)
-        : quote(d(params.amount), reserveY, reserveX)
+        ? quote(params.amount, reserveX, reserveY)
+        : quote(params.amount, reserveY, reserveX)
 
     return {
       amount: outputAmount,
       coinXDivCoinY: reserveX.div(reserveY),
       coinYDivCoinX: reserveY.div(reserveX),
-      shareOfPool: d(params.amount).div(reserveX.add(d(params.amount))),
+      shareOfPool: params.amount.div(reserveX.add(params.amount)),
     }
   }
 
   addLiquidityPayload(params: AddLiquidityPayload): Payload {
-    if (params.slippage >= 1 || params.slippage <= 0) {
+    params.amountX = d(params.amountX)
+    params.amountY = d(params.amountY)
+    params.slippage = d(params.slippage)
+
+    if (params.slippage.gte(1) || params.slippage.lte(0)) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
 
     const { modules } = this.sdk.networkOptions
-
     const functionName = composeType(modules.Scripts, 'add_liquidity_entry')
-
     const typeArguments = [
       params.coinX,
       params.coinY,
     ]
-
-    const amountXDesired = d(params.amountX)
-    const amountYDesired = d(params.amountY)
-    const amountXMin = withSlippage(d(params.amountX), d(params.slippage), 'minus')
-    const amountYMin = withSlippage(d(params.amountY), d(params.slippage), 'minus')
+    const amountXDesired = params.amountX
+    const amountYDesired = params.amountY
+    const amountXMin = withSlippage(params.amountX, params.slippage, 'minus')
+    const amountYMin = withSlippage(params.amountY, params.slippage, 'minus')
 
     const deadline = minsToDeadline(params.deadline)
 
@@ -257,8 +260,9 @@ export class SwapModule implements IModule {
    * @returns 
    */
   async removeLiquidityRates(params: RemoveLiquidityParams): Promise<RemoveLiquidityReturn> {
-    const { modules } = this.sdk.networkOptions
+    params.amount = d(params.amount)
 
+    const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.coinX, params.coinY)
     const lpCoin = composeLPCoin(modules.ResourceAccountAddress, params.coinX, params.coinY)
     const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
@@ -277,20 +281,20 @@ export class SwapModule implements IModule {
       throw new Error(`LpCoin (${lpCoin}) not found`)
     }
 
-    const lpSupply = lpCoinInfo.data.supply.vec[0].integer.vec[0].value // lp total supply
-    if (params.amount > lpSupply) {
+    const lpSupply = d(lpCoinInfo.data.supply.vec[0].integer.vec[0].value) // lp total supply
+    if (params.amount.gt(lpSupply)) {
       throw new Error(`Invalid amount (${params.amount}) value, larger than total lpCoin supply`)
     }
 
-    const coinXReserve = lp.data.coin_x_reserve.value
-    const coinYReserve = lp.data.coin_y_reserve.value
+    const coinXReserve = d(lp.data.coin_x_reserve.value)
+    const coinYReserve = d(lp.data.coin_y_reserve.value)
 
     const [reserveX, reserveY] = isSorted
-      ? [d(coinXReserve), d(coinYReserve)]
-      : [d(coinYReserve), d(coinXReserve)]
+      ? [coinXReserve, coinYReserve]
+      : [coinYReserve, coinXReserve]
 
-    const coinXout = d(params.amount).mul(reserveX).div(d(lpSupply)).toDP(0)
-    const coinYout = d(params.amount).mul(reserveY).div(d(lpSupply)).toDP(0)
+    const coinXout = params.amount.mul(reserveX).div(lpSupply).toDP(0)
+    const coinYout = params.amount.mul(reserveY).div(lpSupply).toDP(0)
 
     return {
       amountX: coinXout,
@@ -299,7 +303,12 @@ export class SwapModule implements IModule {
   }
 
   removeLiquidityPayload(params: RemoveLiquidityPayload): Payload {
-    if (d(params.slippage).greaterThanOrEqualTo(1) || d(params.slippage).lessThanOrEqualTo(0)) {
+    params.amount = d(params.amount)
+    params.amountXDesired = d(params.amountXDesired)
+    params.amountYDesired = d(params.amountYDesired)
+    params.slippage = d(params.slippage)
+
+    if (params.slippage.gte(1) || params.slippage.lte(0)) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
     const { modules } = this.sdk.networkOptions
@@ -310,12 +319,12 @@ export class SwapModule implements IModule {
       params.coinY,
     ]
 
-    const amountXMin = withSlippage(d(params.amountXDesired), d(params.slippage), 'minus')
-    const amountYMin = withSlippage(d(params.amountYDesired), d(params.slippage), 'minus')
+    const amountXMin = withSlippage(params.amountXDesired, params.slippage, 'minus')
+    const amountYMin = withSlippage(params.amountYDesired, params.slippage, 'minus')
     
     const deadline = minsToDeadline(params.deadline)
     
-    const args = [d(params.amount).toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
+    const args = [params.amount.toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -332,6 +341,9 @@ export class SwapModule implements IModule {
    * @returns 
    */
   async swapRates(params: SwapRatesParams): Promise<SwapRatesReturn> {
+    params.amount = d(params.amount)
+    params.slippage = d(params.slippage)
+
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(params.fromCoin, params.toCoin)
     const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.fromCoin, params.toCoin)
@@ -356,30 +368,30 @@ export class SwapModule implements IModule {
       throw new Error(`SwapPoolData (${swapPoolDataType}) not found`)
     }
 
-    const coinXReserve = lp.data.coin_x_reserve.value
-    const coinYReserve = lp.data.coin_y_reserve.value
+    const coinXReserve = d(lp.data.coin_x_reserve.value)
+    const coinYReserve = d(lp.data.coin_y_reserve.value)
 
     const [reserveFrom, reserveTo] = isSorted
-      ? [d(coinXReserve), d(coinYReserve)]
-      : [d(coinYReserve), d(coinXReserve)]
+      ? [coinXReserve, coinYReserve]
+      : [coinYReserve, coinXReserve]
 
-    const fee = swapPoolData.data.swap_fee
+    const fee = d(swapPoolData.data.swap_fee)
 
     const outputCoins =
       isSorted
-        ? getCoinOutWithFees(d(params.amount), reserveFrom, reserveTo, d(fee))
-        : getCoinInWithFees(d(params.amount), reserveFrom, reserveTo, d(fee))
+        ? getCoinOutWithFees(params.amount, reserveFrom, reserveTo, fee)
+        : getCoinInWithFees(params.amount, reserveFrom, reserveTo, fee)
 
     const amountWithSlippage = params.fixedCoin == 'from'
-      ? withSlippage(d(outputCoins), d(params.slippage), 'minus')
-      : withSlippage(d(outputCoins), d(params.slippage), 'plus')
+      ? withSlippage(outputCoins, params.slippage, 'minus')
+      : withSlippage(outputCoins, params.slippage, 'plus')
 
     const coinFromDivCoinTo = isSorted
-      ? d(params.amount).div(outputCoins)
-      : outputCoins.div(d(params.amount))
+      ? params.amount.div(outputCoins)
+      : outputCoins.div(params.amount)
     const coinToDivCoinFrom = isSorted
-      ? outputCoins.div(d(params.amount))
-      : d(params.amount).div(outputCoins)
+      ? outputCoins.div(params.amount)
+      : params.amount.div(outputCoins)
 
     const reserveFromDivReserveTo = reserveFrom.div(reserveTo)
     const reserveToDivReserveFrom = reserveTo.div(reserveFrom)
@@ -398,7 +410,11 @@ export class SwapModule implements IModule {
   }
 
   swapPayload(params: SwapPayload): Payload {
-    if (d(params.slippage).greaterThanOrEqualTo(1) || d(params.slippage).lessThanOrEqualTo(0)) {
+    params.fromAmount = d(params.fromAmount)
+    params.toAmount = d(params.toAmount)
+    params.slippage = d(params.slippage)
+
+    if (params.slippage.gte(1) || params.slippage.lte(0)) {
       throw new Error(`Invalid slippage (${params.slippage}) value`)
     }
 
@@ -420,8 +436,8 @@ export class SwapModule implements IModule {
         : d(params.toAmount)
     const backAmount =
       params.fixedCoin === 'to'
-        ? withSlippage(d(params.fromAmount), d(params.slippage), 'plus')
-        : withSlippage(d(params.toAmount), d(params.slippage), 'minus')
+        ? withSlippage(params.fromAmount, params.slippage, 'plus')
+        : withSlippage(params.toAmount, params.slippage, 'minus')
 
     const deadline = minsToDeadline(params.deadline)
 
@@ -607,7 +623,7 @@ export class SwapModule implements IModule {
     const oldestLedgerVersion = ledgerInfo.oldest_ledger_version
     const queryDeltaVersion = deltaVersion ? deltaVersion : 5e6.toString()
     const queryLedgerVersion =
-      d(currentLedgerVersion).sub(queryDeltaVersion).greaterThanOrEqualTo(d(oldestLedgerVersion))
+      d(currentLedgerVersion).sub(queryDeltaVersion).gte(d(oldestLedgerVersion))
       ? d(currentLedgerVersion).sub(queryDeltaVersion)
       : d(oldestLedgerVersion)
 
@@ -625,12 +641,12 @@ export class SwapModule implements IModule {
 }
 
 export function getCoinOutWithFees(
-  coinInVal: Decimal.Instance,
-  reserveInSize: Decimal.Instance,
-  reserveOutSize: Decimal.Instance,
-  fee: Decimal.Instance
+  coinInVal: Decimal,
+  reserveInSize: Decimal,
+  reserveOutSize: Decimal,
+  fee: Decimal,
 ) {
-  const { feePct, feeScale } = { feePct: d(fee), feeScale: d(10000) }
+  const { feePct, feeScale } = { feePct: fee, feeScale: d(10000) }
   const feeMultiplier = feeScale.sub(feePct)
   const coinInAfterFees = coinInVal.mul(feeMultiplier)
   const newReservesInSize = reserveInSize.mul(feeScale).plus(coinInAfterFees)
@@ -639,26 +655,26 @@ export function getCoinOutWithFees(
 }
 
 export function getCoinInWithFees(
-  coinOutVal: Decimal.Instance,
-  reserveOutSize: Decimal.Instance,
-  reserveInSize: Decimal.Instance,
-  fee: Decimal.Instance
+  coinOutVal: Decimal,
+  reserveOutSize: Decimal,
+  reserveInSize: Decimal,
+  fee: Decimal,
 ) {
-  const { feePct, feeScale } = { feePct: d(fee), feeScale: d(10000) }
+  const { feePct, feeScale } = { feePct: fee, feeScale: d(10000) }
   const feeMultiplier = feeScale.sub(feePct)
   const newReservesOutSize = reserveOutSize.sub(coinOutVal).mul(feeMultiplier)
 
   return coinOutVal.mul(feeScale).mul(reserveInSize).div(newReservesOutSize).plus(1).floor()
 }
 
-export function withSlippage(value: Decimal.Instance, slippage: Decimal.Instance, mode: 'plus' | 'minus') {
-  return d(value)[mode](d(value).mul(slippage)).toDP(0)
+export function withSlippage(value: Decimal, slippage: Decimal, mode: 'plus' | 'minus') {
+  return value[mode](value.mul(slippage)).toDP(0)
 }
 
 function quote(
-  amountX: Decimal.Instance,
-  reserveX: Decimal.Instance,
-  reserveY: Decimal.Instance,
+  amountX: Decimal,
+  reserveX: Decimal,
+  reserveY: Decimal,
 ) {
   return amountX.mul(reserveY).div(reserveX).floor()
 }

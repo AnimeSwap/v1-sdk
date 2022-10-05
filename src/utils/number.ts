@@ -9,9 +9,8 @@ export function d(value?: Decimal.Value) : Decimal {
 }
 
 export function minsToDeadline(deadline: BigNumber): Decimal {
-  return d(deadline).mul(60).add(d(Date.now() / 1000).floor())
+  return d(deadline).mul(60).add(d(Date.now() / 1000).floor()).floor()
 }
-
 
 export function pow10(decimals: BigNumber) : Decimal {
   return d(10).pow(d(decimals).abs())
