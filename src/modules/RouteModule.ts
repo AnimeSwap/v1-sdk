@@ -4,7 +4,7 @@ import {
   AptosResourceType,
   Payload,
 } from '../types/aptos'
-import { d } from '../utils/number'
+import { d, minsToDeadline } from '../utils/number'
 import {
   getCoinInWithFees,
   getCoinOutWithFees,
@@ -17,10 +17,11 @@ import {
   SwapPoolData,
 } from '../types/swap'
 import Decimal from 'decimal.js'
+import { BigNumber } from '../types/common'
 
 type Trade = {
   coinPairList: LiquidityPoolResource[] // coin pair info with reserve amount
-  amountList: string[]  // coin amount, from `fromCoin` to `toCoin`
+  amountList: Decimal[]  // coin amount, from `fromCoin` to `toCoin`
   coinTypeList: string[]  // coin type, from `fromCoin` to `toCoin`
   priceImpact: Decimal  // price impact of this trade
 }
@@ -28,7 +29,7 @@ type Trade = {
 export type SwapCoinParams = {
   fromCoin: AptosResourceType
   toCoin: AptosResourceType
-  amount: string
+  amount: BigNumber
 }
 
 export class RouteModule implements IModule {
@@ -63,10 +64,10 @@ export class RouteModule implements IModule {
     maxNumResults: number,
     maxHops: number,
     currentPairs: LiquidityPoolResource[],
-    currentAmounts: string[],
+    currentAmounts: Decimal[],
     nextCoinType: AptosResourceType,
-    nextAmountIn: string,
-    fee: string,
+    nextAmountIn: Decimal,
+    fee: Decimal,
     bestTrades: Trade[],
   ): Promise<Trade[]> {
     for (let i = 0; i < pairList.length; i++) {
@@ -78,17 +79,17 @@ export class RouteModule implements IModule {
         ? pair.coinY
         : pair.coinX
         const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
-          ? [pair.coinXReserve, pair.coinYReserve]
-          : [pair.coinYReserve, pair.coinXReserve]
-        const coinOut = getCoinOutWithFees(d(nextAmountIn), d(reserveIn), d(reserveOut), d(fee))
-        if (coinOut.lessThan(d(0) || coinOut.greaterThan(d(reserveOut)))) continue
+          ? [d(pair.coinXReserve), d(pair.coinYReserve)]
+          : [d(pair.coinYReserve), d(pair.coinXReserve)]
+        const coinOut = getCoinOutWithFees(nextAmountIn, reserveIn, reserveOut, fee)
+        if (coinOut.lt(0) || coinOut.gt(reserveOut)) continue
         // we have arrived at the output token, so this is the final trade of one of the paths
         if (coinTypeOut == coinTypeOutOrigin) {
           const coinPairList = [...currentPairs, pair]
-          const amountList = [...currentAmounts, coinOut.toString()]
+          const amountList = [...currentAmounts, coinOut]
           const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
           const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
-          const newTrade = {
+          const newTrade: Trade = {
             coinPairList,
             amountList,
             coinTypeList,
@@ -110,9 +111,9 @@ export class RouteModule implements IModule {
             maxNumResults,
             maxHops - 1,
             [...currentPairs, pair],
-            [...currentAmounts, coinOut.toString()],
+            [...currentAmounts, coinOut],
             coinTypeOut,
-            coinOut.toString(),
+            coinOut,
             fee,
             bestTrades,
           )
@@ -144,10 +145,10 @@ export class RouteModule implements IModule {
     maxNumResults: number,
     maxHops: number,
     currentPairs: LiquidityPoolResource[],
-    currentAmounts: string[],
+    currentAmounts: Decimal[],
     nextCoinType: AptosResourceType,
-    nextAmountOut: string,
-    fee: string,
+    nextAmountOut: Decimal,
+    fee: Decimal,
     bestTrades: Trade[],
   ): Promise<Trade[]> {
     for (let i = 0; i < pairList.length; i++) {
@@ -159,17 +160,17 @@ export class RouteModule implements IModule {
         ? pair.coinY
         : pair.coinX
         const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
-          ? [pair.coinYReserve, pair.coinXReserve]
-          : [pair.coinXReserve, pair.coinYReserve]
-        const coinIn = getCoinInWithFees(d(nextAmountOut), d(reserveOut), d(reserveIn), d(fee))
-        if (coinIn.lessThan(d(0) || coinIn.greaterThan(d(reserveIn)))) continue
+          ? [d(pair.coinYReserve), d(pair.coinXReserve)]
+          : [d(pair.coinXReserve), d(pair.coinYReserve)]
+        const coinIn = getCoinInWithFees(nextAmountOut, reserveOut, reserveIn, fee)
+        if (coinIn.lt(0) || coinIn.gt(reserveIn)) continue
         // we have arrived at the output token, so this is the final trade of one of the paths
         if (coinTypeIn == coinTypeInOrigin) {
           const coinPairList = [pair, ...currentPairs]
-          const amountList = [coinIn.toString(), ...currentAmounts]
+          const amountList = [coinIn, ...currentAmounts]
           const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
           const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
-          const newTrade = {
+          const newTrade: Trade = {
             coinPairList,
             amountList,
             coinTypeList,
@@ -191,9 +192,9 @@ export class RouteModule implements IModule {
             maxNumResults,
             maxHops - 1,
             [pair, ...currentPairs],
-            [coinIn.toString(), ...currentAmounts],
+            [coinIn, ...currentAmounts],
             coinTypeIn,
-            coinIn.toString(),
+            coinIn,
             fee,
             bestTrades,
           )
@@ -204,6 +205,7 @@ export class RouteModule implements IModule {
   }
 
   async getRouteSwapExactCoinForCoin(params: SwapCoinParams): Promise<Trade[]> {
+    params.amount = d(params.amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -216,7 +218,7 @@ export class RouteModule implements IModule {
       throw new Error(`swapPoolData (${swapPoolDataType}) not found`)
     }
 
-    const fee = swapPoolData.data.swap_fee
+    const fee = d(swapPoolData.data.swap_fee)
     const bestTrades = this.bestTradeExactIn(
       pairList,
       params.fromCoin,
@@ -234,6 +236,7 @@ export class RouteModule implements IModule {
   }
 
   async getRouteSwapCoinForExactCoin(params: SwapCoinParams): Promise<Trade[]> {
+    params.amount = d(params.amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -246,7 +249,7 @@ export class RouteModule implements IModule {
       throw new Error(`swapPoolData (${swapPoolDataType}) not found`)
     }
 
-    const fee = swapPoolData.data.swap_fee
+    const fee = d(swapPoolData.data.swap_fee)
     const bestTrades = this.bestTradeExactOut(
       pairList,
       params.fromCoin,
@@ -266,8 +269,8 @@ export class RouteModule implements IModule {
   swapExactCoinForCoinPayload(
       trade: Trade,
       toAddress: AptosResourceType,
-      slippage: number,
-      deadline: number,
+      slippage: BigNumber,
+      deadline: BigNumber,
     ): Payload {
     if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
       throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
@@ -293,9 +296,9 @@ export class RouteModule implements IModule {
     const fromAmount = trade.amountList[0]
     const toAmount = withSlippage(d(trade.amountList[trade.amountList.length - 1]), d(slippage), 'minus')
 
-    const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
+    const deadlineArgs = minsToDeadline(deadline)
 
-    const args = [fromAmount, d(toAmount).toString(), toAddress, d(deadlineArgs).toString()]
+    const args = [fromAmount.toString(), toAmount.toString(), toAddress, deadlineArgs.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -308,8 +311,8 @@ export class RouteModule implements IModule {
   swapCoinForExactCoinPayload(
       trade: Trade,
       toAddress: AptosResourceType,
-      slippage: number,
-      deadline: number,
+      slippage: BigNumber,
+      deadline: BigNumber,
     ): Payload {
     if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
       throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
@@ -335,9 +338,9 @@ export class RouteModule implements IModule {
     const toAmount = trade.amountList[trade.amountList.length - 1]
     const fromAmount = withSlippage(d(trade.amountList[0]), d(slippage), 'plus')
 
-    const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
+    const deadlineArgs = minsToDeadline(deadline)
 
-    const args = [toAmount, d(fromAmount).toString(), toAddress, d(deadlineArgs).toString()]
+    const args = [toAmount.toString(), fromAmount.toString(), toAddress, deadlineArgs.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -405,9 +408,9 @@ function getCoinTypeList(coinInType: AptosResourceType, coinPairList: LiquidityP
 }
 
 // calculated as: abs(realAmountOut - noImpactAmountOut) / noImpactAmountOut
-function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: string[]): Decimal {
-  const realAmountOut = d(amountList[amountList.length - 1])
-  let noImpactAmountOut = d(amountList[0])
+function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: Decimal[]): Decimal {
+  const realAmountOut = amountList[amountList.length - 1]
+  let noImpactAmountOut = amountList[0]
   let currentCoinType = coinInType
   for (let i = 0; i < coinPairList.length; i++) {
     const coinPair = coinPairList[i]
