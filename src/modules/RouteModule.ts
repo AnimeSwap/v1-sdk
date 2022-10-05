@@ -4,7 +4,7 @@ import {
   AptosResourceType,
   Payload,
 } from '../types/aptos'
-import { d } from '../utils/number'
+import { d, minsToDeadline } from '../utils/number'
 import {
   getCoinInWithFees,
   getCoinOutWithFees,
@@ -17,6 +17,7 @@ import {
   SwapPoolData,
 } from '../types/swap'
 import Decimal from 'decimal.js'
+import { BigNumber } from '../types/common'
 
 type Trade = {
   coinPairList: LiquidityPoolResource[] // coin pair info with reserve amount
@@ -28,7 +29,7 @@ type Trade = {
 export type SwapCoinParams = {
   fromCoin: AptosResourceType
   toCoin: AptosResourceType
-  amount: string
+  amount: BigNumber
 }
 
 export class RouteModule implements IModule {
@@ -204,6 +205,7 @@ export class RouteModule implements IModule {
   }
 
   async getRouteSwapExactCoinForCoin(params: SwapCoinParams): Promise<Trade[]> {
+    params.amount = d(params.amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -224,9 +226,9 @@ export class RouteModule implements IModule {
       3,
       3,
       [],
-      [params.amount],
+      [params.amount.toString()],
       params.fromCoin,
-      params.amount,
+      params.amount.toString(),
       fee,
       [],
     )
@@ -234,6 +236,7 @@ export class RouteModule implements IModule {
   }
 
   async getRouteSwapCoinForExactCoin(params: SwapCoinParams): Promise<Trade[]> {
+    params.amount = d(params.amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -254,9 +257,9 @@ export class RouteModule implements IModule {
       3,
       3,
       [],
-      [params.amount],
+      [params.amount.toString()],
       params.toCoin,
-      params.amount,
+      params.amount.toString(),
       fee,
       [],
     )
@@ -266,8 +269,8 @@ export class RouteModule implements IModule {
   swapExactCoinForCoinPayload(
       trade: Trade,
       toAddress: AptosResourceType,
-      slippage: number,
-      deadline: number,
+      slippage: BigNumber,
+      deadline: BigNumber,
     ): Payload {
     if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
       throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
@@ -293,9 +296,9 @@ export class RouteModule implements IModule {
     const fromAmount = trade.amountList[0]
     const toAmount = withSlippage(d(trade.amountList[trade.amountList.length - 1]), d(slippage), 'minus')
 
-    const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
+    const deadlineArgs = minsToDeadline(deadline)
 
-    const args = [fromAmount, d(toAmount).toString(), toAddress, d(deadlineArgs).toString()]
+    const args = [fromAmount, toAmount.toString(), toAddress, deadlineArgs.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -308,8 +311,8 @@ export class RouteModule implements IModule {
   swapCoinForExactCoinPayload(
       trade: Trade,
       toAddress: AptosResourceType,
-      slippage: number,
-      deadline: number,
+      slippage: BigNumber,
+      deadline: BigNumber,
     ): Payload {
     if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
       throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
@@ -335,9 +338,9 @@ export class RouteModule implements IModule {
     const toAmount = trade.amountList[trade.amountList.length - 1]
     const fromAmount = withSlippage(d(trade.amountList[0]), d(slippage), 'plus')
 
-    const deadlineArgs = Math.floor(Date.now() / 1000) + deadline * 60
+    const deadlineArgs = minsToDeadline(deadline)
 
-    const args = [toAmount, d(fromAmount).toString(), toAddress, d(deadlineArgs).toString()]
+    const args = [toAmount, fromAmount.toString(), toAddress, deadlineArgs.toString()]
 
     return {
       type: 'entry_function_payload',

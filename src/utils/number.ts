@@ -1,7 +1,7 @@
 import Decimal from 'decimal.js'
-import { BigNumber } from '../main'
+import { BigNumber } from '../types/common'
 
-export function d(value?: Decimal.Value) : Decimal {
+export function d(value?: BigNumber) : Decimal {
   if (Decimal.isDecimal(value)) {
     return value as Decimal
   }
