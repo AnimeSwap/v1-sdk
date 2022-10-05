@@ -4,7 +4,7 @@ const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
   BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC',
 }
-const SenderAddress: string = '0xa1ice'
+const SenderAddress = '0xa1ice'
 
 describe('Route Module', () => {
   const sdk = new SDK('https://fullnode.devnet.aptoslabs.com')
