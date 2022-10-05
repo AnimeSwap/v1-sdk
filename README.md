@@ -143,7 +143,7 @@ Swap exact coin to coin mode
   const trades = await sdk.route.getRouteSwapExactCoinForCoin({
     fromCoin: APTOS,
     toCoin: BTC,
-    amount: aptosAmount.toString(),
+    amount: aptosAmount,
   });
   if (trades.length == 0) throw("No route error")
   const bestTrade = trades[0]
@@ -183,7 +183,7 @@ Swap coin to exact coin mode
   const trades = await sdk.route.getRouteSwapCoinForExactCoin({
     fromCoin: APTOS,
     toCoin: BTC,
-    amount: btcAmount.toString(),
+    amount: btcAmount,
   });
   if (trades.length == 0) throw("No route error")
   const bestTrade = trades[0]
