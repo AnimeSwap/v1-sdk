@@ -190,12 +190,17 @@ export class SwapModule implements IModule {
    * @param params AddLiquidityParams
    * @returns 
    */
-  async addLiquidityRates(params: AddLiquidityParams): Promise<AddLiquidityReturn> {
-    params.amount = d(params.amount)
+  async addLiquidityRates({
+    coinX,
+    coinY,
+    amount,
+    fixedCoin,
+  }: AddLiquidityParams): Promise<AddLiquidityReturn> {
+    amount = d(amount)
 
     const { modules } = this.sdk.networkOptions
-    const isSorted = isSortedSymbols(params.coinX, params.coinY)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
+    const isSorted = isSortedSymbols(coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
     const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
 
     if (!lp) {
@@ -210,41 +215,48 @@ export class SwapModule implements IModule {
       : [coinYReserve, coinXReserve]
 
     const outputAmount =
-      params.fixedCoin == 'X'
-        ? quote(params.amount, reserveX, reserveY)
-        : quote(params.amount, reserveY, reserveX)
+      fixedCoin == 'X'
+        ? quote(amount, reserveX, reserveY)
+        : quote(amount, reserveY, reserveX)
 
     return {
       amount: outputAmount,
       coinXDivCoinY: reserveX.div(reserveY),
       coinYDivCoinX: reserveY.div(reserveX),
-      shareOfPool: params.amount.div(reserveX.add(params.amount)),
+      shareOfPool: amount.div(reserveX.add(amount)),
     }
   }
 
-  addLiquidityPayload(params: AddLiquidityPayload): Payload {
-    params.amountX = d(params.amountX)
-    params.amountY = d(params.amountY)
-    params.slippage = d(params.slippage)
+  addLiquidityPayload({
+    coinX,
+    coinY,
+    amountX,
+    amountY,
+    slippage,
+    deadline,
+  }: AddLiquidityPayload): Payload {
+    amountX = d(amountX)
+    amountY = d(amountY)
+    slippage = d(slippage)
 
-    if (params.slippage.gte(1) || params.slippage.lte(0)) {
-      throw new Error(`Invalid slippage (${params.slippage}) value`)
+    if (slippage.gte(1) || slippage.lte(0)) {
+      throw new Error(`Invalid slippage (${slippage}) value`)
     }
 
     const { modules } = this.sdk.networkOptions
     const functionName = composeType(modules.Scripts, 'add_liquidity_entry')
     const typeArguments = [
-      params.coinX,
-      params.coinY,
+      coinX,
+      coinY,
     ]
-    const amountXDesired = params.amountX
-    const amountYDesired = params.amountY
-    const amountXMin = withSlippage(params.amountX, params.slippage, 'minus')
-    const amountYMin = withSlippage(params.amountY, params.slippage, 'minus')
+    const amountXDesired = amountX
+    const amountYDesired = amountY
+    const amountXMin = withSlippage(amountX, slippage, 'minus')
+    const amountYMin = withSlippage(amountY, slippage, 'minus')
 
-    const deadline = minsToDeadline(params.deadline)
+    const deadlineTimestamp = minsToDeadline(deadline)
 
-    const args = [amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
+    const args = [amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString(), deadlineTimestamp.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -259,13 +271,17 @@ export class SwapModule implements IModule {
    * @param params RemoveLiquidityParams
    * @returns 
    */
-  async removeLiquidityRates(params: RemoveLiquidityParams): Promise<RemoveLiquidityReturn> {
-    params.amount = d(params.amount)
+  async removeLiquidityRates({
+    coinX,
+    coinY,
+    amount,
+  }: RemoveLiquidityParams): Promise<RemoveLiquidityReturn> {
+    amount = d(amount)
 
     const { modules } = this.sdk.networkOptions
-    const isSorted = isSortedSymbols(params.coinX, params.coinY)
-    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, params.coinX, params.coinY)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
+    const isSorted = isSortedSymbols(coinX, coinY)
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -282,8 +298,8 @@ export class SwapModule implements IModule {
     }
 
     const lpSupply = d(lpCoinInfo.data.supply.vec[0].integer.vec[0].value) // lp total supply
-    if (params.amount.gt(lpSupply)) {
-      throw new Error(`Invalid amount (${params.amount}) value, larger than total lpCoin supply`)
+    if (amount.gt(lpSupply)) {
+      throw new Error(`Invalid amount (${amount}) value, larger than total lpCoin supply`)
     }
 
     const coinXReserve = d(lp.data.coin_x_reserve.value)
@@ -293,8 +309,8 @@ export class SwapModule implements IModule {
       ? [coinXReserve, coinYReserve]
       : [coinYReserve, coinXReserve]
 
-    const coinXout = params.amount.mul(reserveX).div(lpSupply).toDP(0)
-    const coinYout = params.amount.mul(reserveY).div(lpSupply).toDP(0)
+    const coinXout = amount.mul(reserveX).div(lpSupply).toDP(0)
+    const coinYout = amount.mul(reserveY).div(lpSupply).toDP(0)
 
     return {
       amountX: coinXout,
@@ -302,29 +318,34 @@ export class SwapModule implements IModule {
     }
   }
 
-  removeLiquidityPayload(params: RemoveLiquidityPayload): Payload {
-    params.amount = d(params.amount)
-    params.amountXDesired = d(params.amountXDesired)
-    params.amountYDesired = d(params.amountYDesired)
-    params.slippage = d(params.slippage)
+  removeLiquidityPayload({
+    coinX,
+    coinY,
+    amount,
+    amountXDesired,
+    amountYDesired,
+    slippage,
+    deadline,
+  }: RemoveLiquidityPayload): Payload {
+    amount = d(amount)
+    amountXDesired = d(amountXDesired)
+    amountYDesired = d(amountYDesired)
+    slippage = d(slippage)
 
-    if (params.slippage.gte(1) || params.slippage.lte(0)) {
-      throw new Error(`Invalid slippage (${params.slippage}) value`)
+    if (slippage.gte(1) || slippage.lte(0)) {
+      throw new Error(`Invalid slippage (${slippage}) value`)
     }
     const { modules } = this.sdk.networkOptions
     const functionName = composeType(modules.Scripts, 'remove_liquidity_entry')
 
-    const typeArguments = [
-      params.coinX,
-      params.coinY,
-    ]
+    const typeArguments = [coinX, coinY]
 
-    const amountXMin = withSlippage(params.amountXDesired, params.slippage, 'minus')
-    const amountYMin = withSlippage(params.amountYDesired, params.slippage, 'minus')
-    
-    const deadline = minsToDeadline(params.deadline)
-    
-    const args = [params.amount.toString(), amountXMin.toString(), amountYMin.toString(), deadline.toString()]
+    const amountXMin = withSlippage(amountXDesired, slippage, 'minus')
+    const amountYMin = withSlippage(amountYDesired, slippage, 'minus')
+
+    const deadlineTimestamp = minsToDeadline(deadline)
+
+    const args = [amount.toString(), amountXMin.toString(), amountYMin.toString(), deadlineTimestamp.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -340,13 +361,19 @@ export class SwapModule implements IModule {
    * @param params 
    * @returns 
    */
-  async swapRates(params: SwapRatesParams): Promise<SwapRatesReturn> {
-    params.amount = d(params.amount)
-    params.slippage = d(params.slippage)
+  async swapRates({
+    fromCoin,
+    toCoin,
+    amount,
+    fixedCoin,
+    slippage,
+  }: SwapRatesParams): Promise<SwapRatesReturn> {
+    amount = d(amount)
+    slippage = d(slippage)
 
     const { modules } = this.sdk.networkOptions
-    const isSorted = isSortedSymbols(params.fromCoin, params.toCoin)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.fromCoin, params.toCoin)
+    const isSorted = isSortedSymbols(fromCoin, toCoin)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, fromCoin, toCoin)
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
@@ -379,19 +406,19 @@ export class SwapModule implements IModule {
 
     const outputCoins =
       isSorted
-        ? getCoinOutWithFees(params.amount, reserveFrom, reserveTo, fee)
-        : getCoinInWithFees(params.amount, reserveFrom, reserveTo, fee)
+        ? getCoinOutWithFees(amount, reserveFrom, reserveTo, fee)
+        : getCoinInWithFees(amount, reserveFrom, reserveTo, fee)
 
-    const amountWithSlippage = params.fixedCoin == 'from'
-      ? withSlippage(outputCoins, params.slippage, 'minus')
-      : withSlippage(outputCoins, params.slippage, 'plus')
+    const amountWithSlippage = fixedCoin == 'from'
+      ? withSlippage(outputCoins, slippage, 'minus')
+      : withSlippage(outputCoins, slippage, 'plus')
 
     const coinFromDivCoinTo = isSorted
-      ? params.amount.div(outputCoins)
-      : outputCoins.div(params.amount)
+      ? amount.div(outputCoins)
+      : outputCoins.div(amount)
     const coinToDivCoinFrom = isSorted
-      ? outputCoins.div(params.amount)
-      : params.amount.div(outputCoins)
+      ? outputCoins.div(amount)
+      : amount.div(outputCoins)
 
     const reserveFromDivReserveTo = reserveFrom.div(reserveTo)
     const reserveToDivReserveFrom = reserveTo.div(reserveFrom)
@@ -409,40 +436,40 @@ export class SwapModule implements IModule {
     }
   }
 
-  swapPayload(params: SwapPayload): Payload {
-    params.fromAmount = d(params.fromAmount)
-    params.toAmount = d(params.toAmount)
-    params.slippage = d(params.slippage)
+  swapPayload({
+    fromCoin,
+    toCoin,
+    fromAmount,
+    toAmount,
+    fixedCoin,
+    toAddress,
+    slippage,
+    deadline,
+  }: SwapPayload): Payload {
+    fromAmount = d(fromAmount)
+    toAmount = d(toAmount)
+    slippage = d(slippage)
 
-    if (params.slippage.gte(1) || params.slippage.lte(0)) {
-      throw new Error(`Invalid slippage (${params.slippage}) value`)
+    if (slippage.gte(1) || slippage.lte(0)) {
+      throw new Error(`Invalid slippage (${slippage}) value`)
     }
 
     const { modules } = this.sdk.networkOptions
 
     const functionName = composeType(
       modules.Scripts,
-      params.fixedCoin === 'from' ? 'swap_exact_coins_for_coins_entry' : 'swap_coins_for_exact_coins_entry'
+      fixedCoin === 'from' ? 'swap_exact_coins_for_coins_entry' : 'swap_coins_for_exact_coins_entry'
     )
 
-    const typeArguments = [
-      params.fromCoin,
-      params.toCoin,
-    ]
+    const typeArguments = [fromCoin, toCoin]
 
-    const frontAmount =
-      params.fixedCoin === 'from'
-        ? d(params.fromAmount)
-        : d(params.toAmount)
-    const backAmount =
-      params.fixedCoin === 'to'
-        ? withSlippage(params.fromAmount, params.slippage, 'plus')
-        : withSlippage(params.toAmount, params.slippage, 'minus')
+    const frontAmount = fixedCoin === 'from' ? fromAmount : toAmount
+    const backAmount = fixedCoin === 'to'
+      ? withSlippage(fromAmount, slippage, 'plus')
+      : withSlippage(toAmount, slippage, 'minus')
 
-    const deadline = minsToDeadline(params.deadline)
-
-    const args = [frontAmount.toString(), backAmount.toString(), params.toAddress, deadline.toString()]
-
+    const deadlineTimestamp = minsToDeadline(deadline)
+    const args = [frontAmount.toString(), backAmount.toString(), toAddress, deadlineTimestamp.toString()]
     return {
       type: 'entry_function_payload',
       function: functionName,
@@ -497,23 +524,21 @@ export class SwapModule implements IModule {
    * @param params 
    * @returns 
    */
-  async getLPCoinAmount(params: LPCoinParams) : Promise<LPCoinResource> {
+  async getLPCoinAmount({
+    address,
+    coinX,
+    coinY,
+  }: LPCoinParams): Promise<LPCoinResource> {
     const { modules } = this.sdk.networkOptions
-    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, params.coinX, params.coinY)
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
     const coinStoreLP = composeCoinStore(modules.CoinStore, lpCoin)
-
-    const lpCoinStore = await this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(
-      params.address,
-      coinStoreLP,
-    )
-
+    const lpCoinStore = await this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(address, coinStoreLP)
     if (!lpCoinStore) {
       throw new Error(`LPCoin (${coinStoreLP}) not found`)
     }
-
     return {
-      coinX: params.coinX,
-      coinY: params.coinY,
+      coinX: coinX,
+      coinY: coinY,
       lpCoin: lpCoin,
       value: lpCoinStore.data.coin.value,
     }
@@ -530,11 +555,9 @@ export class SwapModule implements IModule {
       modules.ResourceAccountAddress,
       pairInfoType,
     )
-
     if (!pairInfo) {
       throw new Error(`PairInfo (${pairInfoType}) not found`)
     }
-
     const pairList = pairInfo.data.pair_list
     const ret = pairList.map(v => {
       return {
@@ -583,11 +606,14 @@ export class SwapModule implements IModule {
    * @param ledgerVersion? calculate apr with this version window. Default: latest
    * @returns pricePerLPCoin
    */
-  async getPricePerLPCoin(params: CoinPair, ledgerVersion?: bigint | number): Promise<Decimal> {
+  async getPricePerLPCoin({
+    coinX,
+    coinY,
+  }: CoinPair, ledgerVersion?: bigint | number): Promise<Decimal> {
     const { modules } = this.sdk.networkOptions
 
-    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, params.coinX, params.coinY)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, params.coinX, params.coinY)
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -624,15 +650,15 @@ export class SwapModule implements IModule {
     const queryDeltaVersion = deltaVersion ? deltaVersion : 5e6.toString()
     const queryLedgerVersion =
       d(currentLedgerVersion).sub(queryDeltaVersion).gte(d(oldestLedgerVersion))
-      ? d(currentLedgerVersion).sub(queryDeltaVersion)
-      : d(oldestLedgerVersion)
+        ? d(currentLedgerVersion).sub(queryDeltaVersion)
+        : d(oldestLedgerVersion)
 
     const task1 = this.getPricePerLPCoin(params)
     const task2 = this.getPricePerLPCoin(params, BigInt(queryLedgerVersion.toString()))
     const task3 = this.sdk.resources.fetchTransactionByVersion<AptosTransaction>(BigInt(queryLedgerVersion.toString()))
     const [currentPricePerLPCoin, queryPricePerLPCoin, txn] = await Promise.all([task1, task2, task3])
     const deltaTimestamp = d(timestampNow).sub(d(txn.timestamp))
-    const apr = currentPricePerLPCoin.sub(queryPricePerLPCoin).div(queryPricePerLPCoin).mul(365*86400*1000*1000).div(deltaTimestamp)
+    const apr = currentPricePerLPCoin.sub(queryPricePerLPCoin).div(queryPricePerLPCoin).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
     return {
       apr,
       windowSeconds: deltaTimestamp.div(1000000).toDP(0),

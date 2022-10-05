@@ -32,6 +32,13 @@ export type SwapCoinParams = {
   amount: BigNumber
 }
 
+export type SwapCoinPayload = {
+  trade: Trade
+  toAddress: AptosResourceType
+  slippage: BigNumber
+  deadline: BigNumber
+}
+
 export class RouteModule implements IModule {
   protected _sdk: SDK
 
@@ -71,53 +78,53 @@ export class RouteModule implements IModule {
     bestTrades: Trade[],
   ): Promise<Trade[]> {
     for (let i = 0; i < pairList.length; i++) {
-        const pair = pairList[i]
-        if (!pair) continue
-        if (!(pair.coinX == nextCoinType) && !(pair.coinY == nextCoinType)) continue
-        if (pair.coinXReserve === '0' || pair.coinYReserve === '0') continue
-        const coinTypeOut = (pair.coinX == nextCoinType)
+      const pair = pairList[i]
+      if (!pair) continue
+      if (!(pair.coinX == nextCoinType) && !(pair.coinY == nextCoinType)) continue
+      if (pair.coinXReserve === '0' || pair.coinYReserve === '0') continue
+      const coinTypeOut = (pair.coinX == nextCoinType)
         ? pair.coinY
         : pair.coinX
-        const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
-          ? [d(pair.coinXReserve), d(pair.coinYReserve)]
-          : [d(pair.coinYReserve), d(pair.coinXReserve)]
-        const coinOut = getCoinOutWithFees(nextAmountIn, reserveIn, reserveOut, fee)
-        if (coinOut.lt(0) || coinOut.gt(reserveOut)) continue
-        // we have arrived at the output token, so this is the final trade of one of the paths
-        if (coinTypeOut == coinTypeOutOrigin) {
-          const coinPairList = [...currentPairs, pair]
-          const amountList = [...currentAmounts, coinOut]
-          const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
-          const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
-          const newTrade: Trade = {
-            coinPairList,
-            amountList,
-            coinTypeList,
-            priceImpact,
-          }
-          sortedInsert(
-            bestTrades,
-            newTrade,
-            maxNumResults,
-            tradeComparator,
-          )
-        } else if (maxHops > 1 && pairList.length > 1) {
-          const pairListExcludingThisPair = pairList.slice(0, i).concat(pairList.slice(i + 1, pairList.length))
-
-          this.bestTradeExactIn(
-            pairListExcludingThisPair,
-            coinTypeInOrigin,
-            coinTypeOutOrigin,
-            maxNumResults,
-            maxHops - 1,
-            [...currentPairs, pair],
-            [...currentAmounts, coinOut],
-            coinTypeOut,
-            coinOut,
-            fee,
-            bestTrades,
-          )
+      const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
+        ? [d(pair.coinXReserve), d(pair.coinYReserve)]
+        : [d(pair.coinYReserve), d(pair.coinXReserve)]
+      const coinOut = getCoinOutWithFees(nextAmountIn, reserveIn, reserveOut, fee)
+      if (coinOut.lt(0) || coinOut.gt(reserveOut)) continue
+      // we have arrived at the output token, so this is the final trade of one of the paths
+      if (coinTypeOut == coinTypeOutOrigin) {
+        const coinPairList = [...currentPairs, pair]
+        const amountList = [...currentAmounts, coinOut]
+        const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
+        const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
+        const newTrade: Trade = {
+          coinPairList,
+          amountList,
+          coinTypeList,
+          priceImpact,
         }
+        sortedInsert(
+          bestTrades,
+          newTrade,
+          maxNumResults,
+          tradeComparator,
+        )
+      } else if (maxHops > 1 && pairList.length > 1) {
+        const pairListExcludingThisPair = pairList.slice(0, i).concat(pairList.slice(i + 1, pairList.length))
+
+        this.bestTradeExactIn(
+          pairListExcludingThisPair,
+          coinTypeInOrigin,
+          coinTypeOutOrigin,
+          maxNumResults,
+          maxHops - 1,
+          [...currentPairs, pair],
+          [...currentAmounts, coinOut],
+          coinTypeOut,
+          coinOut,
+          fee,
+          bestTrades,
+        )
+      }
     }
 
     return bestTrades
@@ -152,60 +159,64 @@ export class RouteModule implements IModule {
     bestTrades: Trade[],
   ): Promise<Trade[]> {
     for (let i = 0; i < pairList.length; i++) {
-        const pair = pairList[i]
-        if (!pair) continue
-        if (!(pair.coinX == nextCoinType) && !(pair.coinY == nextCoinType)) continue
-        if (pair.coinXReserve === '0' || pair.coinYReserve === '0') continue
-        const coinTypeIn = (pair.coinX == nextCoinType)
+      const pair = pairList[i]
+      if (!pair) continue
+      if (!(pair.coinX == nextCoinType) && !(pair.coinY == nextCoinType)) continue
+      if (pair.coinXReserve === '0' || pair.coinYReserve === '0') continue
+      const coinTypeIn = (pair.coinX == nextCoinType)
         ? pair.coinY
         : pair.coinX
-        const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
-          ? [d(pair.coinYReserve), d(pair.coinXReserve)]
-          : [d(pair.coinXReserve), d(pair.coinYReserve)]
-        const coinIn = getCoinInWithFees(nextAmountOut, reserveOut, reserveIn, fee)
-        if (coinIn.lt(0) || coinIn.gt(reserveIn)) continue
-        // we have arrived at the output token, so this is the final trade of one of the paths
-        if (coinTypeIn == coinTypeInOrigin) {
-          const coinPairList = [pair, ...currentPairs]
-          const amountList = [coinIn, ...currentAmounts]
-          const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
-          const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
-          const newTrade: Trade = {
-            coinPairList,
-            amountList,
-            coinTypeList,
-            priceImpact,
-          }
-          sortedInsert(
-            bestTrades,
-            newTrade,
-            maxNumResults,
-            tradeComparator,
-          )
-        } else if (maxHops > 1 && pairList.length > 1) {
-          const pairListExcludingThisPair = pairList.slice(0, i).concat(pairList.slice(i + 1, pairList.length))
-
-          this.bestTradeExactOut(
-            pairListExcludingThisPair,
-            coinTypeInOrigin,
-            coinTypeOutOrigin,
-            maxNumResults,
-            maxHops - 1,
-            [pair, ...currentPairs],
-            [coinIn, ...currentAmounts],
-            coinTypeIn,
-            coinIn,
-            fee,
-            bestTrades,
-          )
+      const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
+        ? [d(pair.coinYReserve), d(pair.coinXReserve)]
+        : [d(pair.coinXReserve), d(pair.coinYReserve)]
+      const coinIn = getCoinInWithFees(nextAmountOut, reserveOut, reserveIn, fee)
+      if (coinIn.lt(0) || coinIn.gt(reserveIn)) continue
+      // we have arrived at the output token, so this is the final trade of one of the paths
+      if (coinTypeIn == coinTypeInOrigin) {
+        const coinPairList = [pair, ...currentPairs]
+        const amountList = [coinIn, ...currentAmounts]
+        const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
+        const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
+        const newTrade: Trade = {
+          coinPairList,
+          amountList,
+          coinTypeList,
+          priceImpact,
         }
+        sortedInsert(
+          bestTrades,
+          newTrade,
+          maxNumResults,
+          tradeComparator,
+        )
+      } else if (maxHops > 1 && pairList.length > 1) {
+        const pairListExcludingThisPair = pairList.slice(0, i).concat(pairList.slice(i + 1, pairList.length))
+
+        this.bestTradeExactOut(
+          pairListExcludingThisPair,
+          coinTypeInOrigin,
+          coinTypeOutOrigin,
+          maxNumResults,
+          maxHops - 1,
+          [pair, ...currentPairs],
+          [coinIn, ...currentAmounts],
+          coinTypeIn,
+          coinIn,
+          fee,
+          bestTrades,
+        )
+      }
     }
 
     return bestTrades
   }
 
-  async getRouteSwapExactCoinForCoin(params: SwapCoinParams): Promise<Trade[]> {
-    params.amount = d(params.amount)
+  async getRouteSwapExactCoinForCoin({
+    fromCoin,
+    toCoin,
+    amount,
+  }: SwapCoinParams): Promise<Trade[]> {
+    amount = d(amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -221,22 +232,26 @@ export class RouteModule implements IModule {
     const fee = d(swapPoolData.data.swap_fee)
     const bestTrades = this.bestTradeExactIn(
       pairList,
-      params.fromCoin,
-      params.toCoin,
+      fromCoin,
+      toCoin,
       3,
       3,
       [],
-      [params.amount],
-      params.fromCoin,
-      params.amount,
+      [amount],
+      fromCoin,
+      amount,
       fee,
       [],
     )
     return bestTrades
   }
 
-  async getRouteSwapCoinForExactCoin(params: SwapCoinParams): Promise<Trade[]> {
-    params.amount = d(params.amount)
+  async getRouteSwapCoinForExactCoin({
+    fromCoin,
+    toCoin,
+    amount,
+  }: SwapCoinParams): Promise<Trade[]> {
+    amount = d(amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
@@ -252,26 +267,26 @@ export class RouteModule implements IModule {
     const fee = d(swapPoolData.data.swap_fee)
     const bestTrades = this.bestTradeExactOut(
       pairList,
-      params.fromCoin,
-      params.toCoin,
+      fromCoin,
+      toCoin,
       3,
       3,
       [],
-      [params.amount],
-      params.toCoin,
-      params.amount,
+      [amount],
+      toCoin,
+      amount,
       fee,
       [],
     )
     return bestTrades
   }
 
-  swapExactCoinForCoinPayload(
-      trade: Trade,
-      toAddress: AptosResourceType,
-      slippage: BigNumber,
-      deadline: BigNumber,
-    ): Payload {
+  swapExactCoinForCoinPayload({
+    trade,
+    toAddress,
+    slippage,
+    deadline,
+  }: SwapCoinPayload): Payload {
     if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
       throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
     }
@@ -308,12 +323,12 @@ export class RouteModule implements IModule {
     }
   }
 
-  swapCoinForExactCoinPayload(
-      trade: Trade,
-      toAddress: AptosResourceType,
-      slippage: BigNumber,
-      deadline: BigNumber,
-    ): Payload {
+  swapCoinForExactCoinPayload({
+    trade,
+    toAddress,
+    slippage,
+    deadline,
+  }: SwapCoinPayload): Payload {
     if (trade.coinPairList.length > 3 || trade.coinPairList.length < 1) {
       throw new Error(`Invalid coin pair length (${trade.coinPairList.length}) value`)
     }
