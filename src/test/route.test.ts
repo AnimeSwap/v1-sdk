@@ -37,12 +37,12 @@ describe('Route Module', () => {
       amount: '100000',
     })
     expect(trades.length).toBeGreaterThanOrEqual(1)
-    const output = sdk.route.swapExactCoinForCoinPayload(
-      trades[0],
-      SenderAddress,
-      0.05,
-      20,
-    )
+    const output = sdk.route.swapExactCoinForCoinPayload({
+      trade: trades[0],
+      toAddress: SenderAddress,
+      slippage: 0.05,
+      deadline: 20,
+    })
     console.log(output)
     expect(1).toBe(1)
   })
@@ -64,12 +64,12 @@ describe('Route Module', () => {
       amount: '100000',
     })
     expect(trades.length).toBeGreaterThanOrEqual(1)
-    const output = sdk.route.swapCoinForExactCoinPayload(
-      trades[0],
-      SenderAddress,
-      0.05,
-      20,
-    )
+    const output = sdk.route.swapCoinForExactCoinPayload({
+      trade: trades[0],
+      toAddress: SenderAddress,
+      slippage: 0.05,
+      deadline: 20,
+    })
     console.log(output)
     expect(1).toBe(1)
   })

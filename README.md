@@ -157,12 +157,12 @@ Swap exact coin to coin mode
     }
    */
 
-  const output = sdk.route.swapExactCoinForCoinPayload(
+  const output = sdk.route.swapExactCoinForCoinPayload({
     trade: bestTrade,
     toAddress: SenderAddress, // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,   // 5%
     deadline: 20,     // 20 minutes
-  )
+  })
 
   /**
     output type: tx payload
@@ -197,12 +197,12 @@ Swap coin to exact coin mode
     }
    */
 
-  const output = sdk.route.swapCoinForExactCoinPayload(
+  const output = sdk.route.swapCoinForExactCoinPayload({
     trade: bestTrade,
     toAddress: SenderAddress, // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,   // 5%
     deadline: 20,     // 20 minutes
-  )
+  })
 
   /**
     output type: tx payload
