@@ -21,7 +21,7 @@ import { BigNumber } from '../types/common'
 
 type Trade = {
   coinPairList: LiquidityPoolResource[] // coin pair info with reserve amount
-  amountList: string[]  // coin amount, from `fromCoin` to `toCoin`
+  amountList: Decimal[]  // coin amount, from `fromCoin` to `toCoin`
   coinTypeList: string[]  // coin type, from `fromCoin` to `toCoin`
   priceImpact: Decimal  // price impact of this trade
 }
@@ -64,10 +64,10 @@ export class RouteModule implements IModule {
     maxNumResults: number,
     maxHops: number,
     currentPairs: LiquidityPoolResource[],
-    currentAmounts: string[],
+    currentAmounts: Decimal[],
     nextCoinType: AptosResourceType,
-    nextAmountIn: string,
-    fee: string,
+    nextAmountIn: Decimal,
+    fee: Decimal,
     bestTrades: Trade[],
   ): Promise<Trade[]> {
     for (let i = 0; i < pairList.length; i++) {
@@ -79,17 +79,17 @@ export class RouteModule implements IModule {
         ? pair.coinY
         : pair.coinX
         const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
-          ? [pair.coinXReserve, pair.coinYReserve]
-          : [pair.coinYReserve, pair.coinXReserve]
-        const coinOut = getCoinOutWithFees(d(nextAmountIn), d(reserveIn), d(reserveOut), d(fee))
-        if (coinOut.lt(d(0) || coinOut.gt(d(reserveOut)))) continue
+          ? [d(pair.coinXReserve), d(pair.coinYReserve)]
+          : [d(pair.coinYReserve), d(pair.coinXReserve)]
+        const coinOut = getCoinOutWithFees(nextAmountIn, reserveIn, reserveOut, fee)
+        if (coinOut.lt(0) || coinOut.gt(reserveOut)) continue
         // we have arrived at the output token, so this is the final trade of one of the paths
         if (coinTypeOut == coinTypeOutOrigin) {
           const coinPairList = [...currentPairs, pair]
-          const amountList = [...currentAmounts, coinOut.toString()]
+          const amountList = [...currentAmounts, coinOut]
           const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
           const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
-          const newTrade = {
+          const newTrade: Trade = {
             coinPairList,
             amountList,
             coinTypeList,
@@ -111,9 +111,9 @@ export class RouteModule implements IModule {
             maxNumResults,
             maxHops - 1,
             [...currentPairs, pair],
-            [...currentAmounts, coinOut.toString()],
+            [...currentAmounts, coinOut],
             coinTypeOut,
-            coinOut.toString(),
+            coinOut,
             fee,
             bestTrades,
           )
@@ -145,10 +145,10 @@ export class RouteModule implements IModule {
     maxNumResults: number,
     maxHops: number,
     currentPairs: LiquidityPoolResource[],
-    currentAmounts: string[],
+    currentAmounts: Decimal[],
     nextCoinType: AptosResourceType,
-    nextAmountOut: string,
-    fee: string,
+    nextAmountOut: Decimal,
+    fee: Decimal,
     bestTrades: Trade[],
   ): Promise<Trade[]> {
     for (let i = 0; i < pairList.length; i++) {
@@ -160,17 +160,17 @@ export class RouteModule implements IModule {
         ? pair.coinY
         : pair.coinX
         const [reserveIn, reserveOut] = (pair.coinX == nextCoinType)
-          ? [pair.coinYReserve, pair.coinXReserve]
-          : [pair.coinXReserve, pair.coinYReserve]
-        const coinIn = getCoinInWithFees(d(nextAmountOut), d(reserveOut), d(reserveIn), d(fee))
-        if (coinIn.lt(d(0) || coinIn.gt(d(reserveIn)))) continue
+          ? [d(pair.coinYReserve), d(pair.coinXReserve)]
+          : [d(pair.coinXReserve), d(pair.coinYReserve)]
+        const coinIn = getCoinInWithFees(nextAmountOut, reserveOut, reserveIn, fee)
+        if (coinIn.lt(0) || coinIn.gt(reserveIn)) continue
         // we have arrived at the output token, so this is the final trade of one of the paths
         if (coinTypeIn == coinTypeInOrigin) {
           const coinPairList = [pair, ...currentPairs]
-          const amountList = [coinIn.toString(), ...currentAmounts]
+          const amountList = [coinIn, ...currentAmounts]
           const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
           const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
-          const newTrade = {
+          const newTrade: Trade = {
             coinPairList,
             amountList,
             coinTypeList,
@@ -192,9 +192,9 @@ export class RouteModule implements IModule {
             maxNumResults,
             maxHops - 1,
             [pair, ...currentPairs],
-            [coinIn.toString(), ...currentAmounts],
+            [coinIn, ...currentAmounts],
             coinTypeIn,
-            coinIn.toString(),
+            coinIn,
             fee,
             bestTrades,
           )
@@ -218,7 +218,7 @@ export class RouteModule implements IModule {
       throw new Error(`swapPoolData (${swapPoolDataType}) not found`)
     }
 
-    const fee = swapPoolData.data.swap_fee
+    const fee = d(swapPoolData.data.swap_fee)
     const bestTrades = this.bestTradeExactIn(
       pairList,
       params.fromCoin,
@@ -226,9 +226,9 @@ export class RouteModule implements IModule {
       3,
       3,
       [],
-      [params.amount.toString()],
+      [params.amount],
       params.fromCoin,
-      params.amount.toString(),
+      params.amount,
       fee,
       [],
     )
@@ -249,7 +249,7 @@ export class RouteModule implements IModule {
       throw new Error(`swapPoolData (${swapPoolDataType}) not found`)
     }
 
-    const fee = swapPoolData.data.swap_fee
+    const fee = d(swapPoolData.data.swap_fee)
     const bestTrades = this.bestTradeExactOut(
       pairList,
       params.fromCoin,
@@ -257,9 +257,9 @@ export class RouteModule implements IModule {
       3,
       3,
       [],
-      [params.amount.toString()],
+      [params.amount],
       params.toCoin,
-      params.amount.toString(),
+      params.amount,
       fee,
       [],
     )
@@ -298,7 +298,7 @@ export class RouteModule implements IModule {
 
     const deadlineArgs = minsToDeadline(deadline)
 
-    const args = [fromAmount, toAmount.toString(), toAddress, deadlineArgs.toString()]
+    const args = [fromAmount.toString(), toAmount.toString(), toAddress, deadlineArgs.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -340,7 +340,7 @@ export class RouteModule implements IModule {
 
     const deadlineArgs = minsToDeadline(deadline)
 
-    const args = [toAmount, fromAmount.toString(), toAddress, deadlineArgs.toString()]
+    const args = [toAmount.toString(), fromAmount.toString(), toAddress, deadlineArgs.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -408,9 +408,9 @@ function getCoinTypeList(coinInType: AptosResourceType, coinPairList: LiquidityP
 }
 
 // calculated as: abs(realAmountOut - noImpactAmountOut) / noImpactAmountOut
-function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: string[]): Decimal {
-  const realAmountOut = d(amountList[amountList.length - 1])
-  let noImpactAmountOut = d(amountList[0])
+function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: Decimal[]): Decimal {
+  const realAmountOut = amountList[amountList.length - 1]
+  let noImpactAmountOut = amountList[0]
   let currentCoinType = coinInType
   for (let i = 0; i < coinPairList.length; i++) {
     const coinPair = coinPairList[i]
