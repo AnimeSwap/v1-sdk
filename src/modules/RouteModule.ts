@@ -95,7 +95,7 @@ export class RouteModule implements IModule {
         const coinPairList = [...currentPairs, pair]
         const amountList = [...currentAmounts, coinOut]
         const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
-        const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
+        const priceImpact = _getPriceImpact(coinTypeInOrigin, coinPairList, amountList, fee)
         const newTrade: Trade = {
           coinPairList,
           amountList,
@@ -176,7 +176,7 @@ export class RouteModule implements IModule {
         const coinPairList = [pair, ...currentPairs]
         const amountList = [coinIn, ...currentAmounts]
         const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
-        const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList)
+        const priceImpact = _getPriceImpact(coinTypeInOrigin, coinPairList, amountList, fee)
         const newTrade: Trade = {
           coinPairList,
           amountList,
@@ -423,9 +423,9 @@ function getCoinTypeList(coinInType: AptosResourceType, coinPairList: LiquidityP
 }
 
 // calculated as: abs(realAmountOut - noImpactAmountOut) / noImpactAmountOut
-function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: Decimal[]): Decimal {
+function _getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: Decimal[], fee: Decimal): Decimal {
   const realAmountOut = amountList[amountList.length - 1]
-  let noImpactAmountOut = amountList[0]
+  let noImpactAmountOut = amountList[0].mul(d(10000).sub(fee)).div(10000)
   let currentCoinType = coinInType
   for (let i = 0; i < coinPairList.length; i++) {
     const coinPair = coinPairList[i]

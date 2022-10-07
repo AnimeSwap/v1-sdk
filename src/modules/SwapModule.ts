@@ -309,8 +309,8 @@ export class SwapModule implements IModule {
       ? [coinXReserve, coinYReserve]
       : [coinYReserve, coinXReserve]
 
-    const coinXout = amount.mul(reserveX).div(lpSupply).toDP(0)
-    const coinYout = amount.mul(reserveY).div(lpSupply).toDP(0)
+    const coinXout = amount.mul(reserveX).div(lpSupply).floor()
+    const coinYout = amount.mul(reserveY).div(lpSupply).floor()
 
     return {
       amountX: coinXout,
@@ -661,7 +661,7 @@ export class SwapModule implements IModule {
     const apr = currentPricePerLPCoin.sub(queryPricePerLPCoin).div(queryPricePerLPCoin).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
     return {
       apr,
-      windowSeconds: deltaTimestamp.div(1000000).toDP(0),
+      windowSeconds: deltaTimestamp.div(1000000).floor(),
     }
   }
 }
@@ -694,7 +694,8 @@ export function getCoinInWithFees(
 }
 
 export function withSlippage(value: Decimal, slippage: Decimal, mode: 'plus' | 'minus') {
-  return value[mode](value.mul(slippage)).toDP(0)
+  const amountWithSlippage = value[mode](value.mul(slippage))
+  return mode === 'plus' ? amountWithSlippage.ceil() : amountWithSlippage.floor()
 }
 
 function quote(
