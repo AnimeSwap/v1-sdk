@@ -122,7 +122,7 @@ describe('Swap Module', () => {
       fixedCoin: 'to',
       toAddress: SenderAddress,
       slippage: 0.05,
-      deadline: 20,
+      deadline: 30,
     })
 
     console.log(output)
@@ -140,7 +140,7 @@ describe('Swap Module', () => {
       fixedCoin: 'from',
       toAddress: SenderAddress,
       slippage: 0.05,
-      deadline: 20,
+      deadline: 30,
     })
 
     console.log(output)
@@ -173,7 +173,7 @@ describe('Swap Module', () => {
       amountX: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
       amountY: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       slippage: 0.05,
-      deadline: 20,
+      deadline: 30,
     })
 
     console.log(output)
@@ -201,7 +201,7 @@ describe('Swap Module', () => {
       amountXDesired: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
       amountYDesired: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       slippage: 0.05,
-      deadline: 20,
+      deadline: 30,
     })
 
     console.log(output)

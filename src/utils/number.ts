@@ -8,8 +8,8 @@ export function d(value?: BigNumber) : Decimal {
   return new Decimal(value === undefined ? 0 : value)
 }
 
-export function minsToDeadline(deadline: BigNumber): Decimal {
-  return d(deadline).mul(60).add(d(Date.now() / 1000).floor()).floor()
+export function secondsToDeadline(deadline: BigNumber): Decimal {
+  return d(deadline).add(d(Date.now() / 1000).floor()).floor()
 }
 
 export function pow10(decimals: BigNumber) : Decimal {

@@ -41,7 +41,7 @@ describe('Route Module', () => {
       trade: trades[0],
       toAddress: SenderAddress,
       slippage: 0.05,
-      deadline: 20,
+      deadline: 30,
     })
     console.log(output)
     expect(1).toBe(1)
@@ -68,7 +68,7 @@ describe('Route Module', () => {
       trade: trades[0],
       toAddress: SenderAddress,
       slippage: 0.05,
-      deadline: 20,
+      deadline: 30,
     })
     console.log(output)
     expect(1).toBe(1)

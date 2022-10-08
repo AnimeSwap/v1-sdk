@@ -19,7 +19,7 @@ import {
   extractAddressFromType,
   isSortedSymbols,
 } from '../utils/contract'
-import { d, minsToDeadline } from '../utils/number'
+import { d, secondsToDeadline } from '../utils/number'
 import Decimal from 'decimal.js'
 import { hexToString } from '../utils/hex'
 import { notEmpty } from '../utils/is'
@@ -254,7 +254,7 @@ export class SwapModule implements IModule {
     const amountXMin = withSlippage(amountX, slippage, 'minus')
     const amountYMin = withSlippage(amountY, slippage, 'minus')
 
-    const deadlineTimestamp = minsToDeadline(deadline)
+    const deadlineTimestamp = secondsToDeadline(deadline)
 
     const args = [amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString(), deadlineTimestamp.toString()]
 
@@ -343,7 +343,7 @@ export class SwapModule implements IModule {
     const amountXMin = withSlippage(amountXDesired, slippage, 'minus')
     const amountYMin = withSlippage(amountYDesired, slippage, 'minus')
 
-    const deadlineTimestamp = minsToDeadline(deadline)
+    const deadlineTimestamp = secondsToDeadline(deadline)
 
     const args = [amount.toString(), amountXMin.toString(), amountYMin.toString(), deadlineTimestamp.toString()]
 
@@ -468,7 +468,7 @@ export class SwapModule implements IModule {
       ? withSlippage(fromAmount, slippage, 'plus')
       : withSlippage(toAmount, slippage, 'minus')
 
-    const deadlineTimestamp = minsToDeadline(deadline)
+    const deadlineTimestamp = secondsToDeadline(deadline)
     const args = [frontAmount.toString(), backAmount.toString(), toAddress, deadlineTimestamp.toString()]
     return {
       type: 'entry_function_payload',
