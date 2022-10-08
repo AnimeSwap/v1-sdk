@@ -4,7 +4,7 @@ import {
   AptosResourceType,
   Payload,
 } from '../types/aptos'
-import { d, minsToDeadline } from '../utils/number'
+import { d, secondsToDeadline } from '../utils/number'
 import {
   getCoinInWithFees,
   getCoinOutWithFees,
@@ -311,7 +311,7 @@ export class RouteModule implements IModule {
     const fromAmount = trade.amountList[0]
     const toAmount = withSlippage(d(trade.amountList[trade.amountList.length - 1]), d(slippage), 'minus')
 
-    const deadlineArgs = minsToDeadline(deadline)
+    const deadlineArgs = secondsToDeadline(deadline)
 
     const args = [fromAmount.toString(), toAmount.toString(), toAddress, deadlineArgs.toString()]
 
@@ -353,7 +353,7 @@ export class RouteModule implements IModule {
     const toAmount = trade.amountList[trade.amountList.length - 1]
     const fromAmount = withSlippage(d(trade.amountList[0]), d(slippage), 'plus')
 
-    const deadlineArgs = minsToDeadline(deadline)
+    const deadlineArgs = secondsToDeadline(deadline)
 
     const args = [toAmount.toString(), fromAmount.toString(), toAddress, deadlineArgs.toString()]
 
