@@ -19,7 +19,7 @@ import {
 import Decimal from 'decimal.js'
 import { BigNumber } from '../types/common'
 
-type Trade = {
+export type Trade = {
   coinPairList: LiquidityPoolResource[] // coin pair info with reserve amount
   amountList: Decimal[]  // coin amount, from `fromCoin` to `toCoin`
   coinTypeList: string[]  // coin type, from `fromCoin` to `toCoin`

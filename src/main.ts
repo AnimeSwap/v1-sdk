@@ -2,6 +2,7 @@ import { SDK } from './sdk'
 
 export * from './sdk'
 export * as Swap from './modules/SwapModule'
+export * as Route from './modules/RouteModule'
 export * as Resources from './modules/ResourcesModule'
 export * as Utils from './utils'
 export * from './types/aptos'
