@@ -39,8 +39,9 @@ export type SwapCoinPayload = {
   deadline: BigNumber
 }
 
+const U64MAX: Decimal = d('18446744073709551615') // 2^64-1
+
 export class RouteModule implements IModule {
-  protected U64MAX: Decimal = d('18446744073709551615') // 2^64-1
   protected _sdk: SDK
 
   get sdk() {
@@ -171,7 +172,7 @@ export class RouteModule implements IModule {
         ? [d(pair.coinYReserve), d(pair.coinXReserve)]
         : [d(pair.coinXReserve), d(pair.coinYReserve)]
       const coinIn = getCoinInWithFees(nextAmountOut, reserveOut, reserveIn, fee)
-      if (coinIn.lt(0) || coinIn.gt(this.U64MAX)) continue
+      if (coinIn.lt(0) || coinIn.gt(U64MAX)) continue
       // we have arrived at the output token, so this is the final trade of one of the paths
       if (coinTypeIn == coinTypeInOrigin) {
         const coinPairList = [pair, ...currentPairs]
