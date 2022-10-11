@@ -170,7 +170,7 @@ export class RouteModule implements IModule {
         ? [d(pair.coinYReserve), d(pair.coinXReserve)]
         : [d(pair.coinXReserve), d(pair.coinYReserve)]
       const coinIn = getCoinInWithFees(nextAmountOut, reserveOut, reserveIn, fee)
-      if (coinIn.lt(0) || coinIn.gt( reserveOut)) continue
+      if (coinIn.lt(0) || coinIn.gt(reserveIn)) continue
       // we have arrived at the output token, so this is the final trade of one of the paths
       if (coinTypeIn == coinTypeInOrigin) {
         const coinPairList = [pair, ...currentPairs]
