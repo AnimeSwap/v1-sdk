@@ -13,7 +13,7 @@ export function secondsToDeadline(deadline: BigNumber): Decimal {
 }
 
 export function pow10(decimals: BigNumber) : Decimal {
-  return d(10).pow(d(decimals).abs())
+  return d(10).pow(d(decimals))
 }
 
 export function mulDecimals(pretty: BigNumber, decimals: BigNumber) : Decimal {
