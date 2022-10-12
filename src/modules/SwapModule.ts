@@ -19,7 +19,7 @@ import {
   extractAddressFromType,
   isSortedSymbols,
 } from '../utils/contract'
-import { d, secondsToDeadline } from '../utils/number'
+import { d } from '../utils/number'
 import Decimal from 'decimal.js'
 import { hexToString } from '../utils/hex'
 import { notEmpty } from '../utils/is'
@@ -53,7 +53,6 @@ export type AddLiquidityPayload = {
   amountX: BigNumber
   amountY: BigNumber
   slippage: BigNumber
-  deadline: BigNumber // minutes
 }
 
 export type RemoveLiquidityParams = {
@@ -74,7 +73,6 @@ export type RemoveLiquidityPayload = {
   amountXDesired: BigNumber
   amountYDesired: BigNumber
   slippage: BigNumber
-  deadline: BigNumber // minutes
 }
 
 export type SwapRatesParams = {
@@ -99,9 +97,7 @@ export type SwapPayload = {
   fromAmount: BigNumber
   toAmount: BigNumber
   fixedCoin: 'from' | 'to'
-  toAddress: AptosResourceType
   slippage: BigNumber
-  deadline: BigNumber // minutes
 }
 
 export type LPCoinResource = {
@@ -176,7 +172,7 @@ export class SwapModule implements IModule {
    */
   async isPairExist(coinX: AptosResourceType, coinY: AptosResourceType): Promise<boolean> {
     const { modules } = this.sdk.networkOptions
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
     try {
       await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
       return true
@@ -200,7 +196,7 @@ export class SwapModule implements IModule {
 
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(coinX, coinY)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
     const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
 
     if (!lp) {
@@ -233,7 +229,6 @@ export class SwapModule implements IModule {
     amountX,
     amountY,
     slippage,
-    deadline,
   }: AddLiquidityPayload): Payload {
     amountX = d(amountX)
     amountY = d(amountY)
@@ -254,9 +249,7 @@ export class SwapModule implements IModule {
     const amountXMin = withSlippage(amountX, slippage, 'minus')
     const amountYMin = withSlippage(amountY, slippage, 'minus')
 
-    const deadlineTimestamp = secondsToDeadline(deadline)
-
-    const args = [amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString(), deadlineTimestamp.toString()]
+    const args = [amountXDesired.toString(), amountYDesired.toString(), amountXMin.toString(), amountYMin.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -281,7 +274,7 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(coinX, coinY)
     const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -325,7 +318,6 @@ export class SwapModule implements IModule {
     amountXDesired,
     amountYDesired,
     slippage,
-    deadline,
   }: RemoveLiquidityPayload): Payload {
     amount = d(amount)
     amountXDesired = d(amountXDesired)
@@ -343,9 +335,7 @@ export class SwapModule implements IModule {
     const amountXMin = withSlippage(amountXDesired, slippage, 'minus')
     const amountYMin = withSlippage(amountYDesired, slippage, 'minus')
 
-    const deadlineTimestamp = secondsToDeadline(deadline)
-
-    const args = [amount.toString(), amountXMin.toString(), amountYMin.toString(), deadlineTimestamp.toString()]
+    const args = [amount.toString(), amountXMin.toString(), amountYMin.toString()]
 
     return {
       type: 'entry_function_payload',
@@ -373,7 +363,7 @@ export class SwapModule implements IModule {
 
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(fromCoin, toCoin)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, fromCoin, toCoin)
+    const lpType = composeLP(modules.DeployerAddress, fromCoin, toCoin)
     const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
@@ -442,9 +432,7 @@ export class SwapModule implements IModule {
     fromAmount,
     toAmount,
     fixedCoin,
-    toAddress,
     slippage,
-    deadline,
   }: SwapPayload): Payload {
     fromAmount = d(fromAmount)
     toAmount = d(toAmount)
@@ -468,8 +456,7 @@ export class SwapModule implements IModule {
       ? withSlippage(fromAmount, slippage, 'plus')
       : withSlippage(toAmount, slippage, 'minus')
 
-    const deadlineTimestamp = secondsToDeadline(deadline)
-    const args = [frontAmount.toString(), backAmount.toString(), toAddress, deadlineTimestamp.toString()]
+    const args = [frontAmount.toString(), backAmount.toString()]
     return {
       type: 'entry_function_payload',
       function: functionName,
@@ -613,7 +600,7 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
 
     const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
-    const lpType = composeLP(modules.DeployerAddress, modules.ResourceAccountAddress, coinX, coinY)
+    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,

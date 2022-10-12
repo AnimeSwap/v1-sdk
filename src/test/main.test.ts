@@ -3,10 +3,8 @@ import { mulDecimals, divDecimals } from '../utils/number'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
-  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC',
+  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::USDT',
 }
-
-const SenderAddress = '0xa1ice'
 
 const CoinInfo: { [key: string]: { decimals: number } } = {
   APTOS: { decimals: 8 },
@@ -120,9 +118,7 @@ describe('Swap Module', () => {
       fromAmount: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
       toAmount: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       fixedCoin: 'to',
-      toAddress: SenderAddress,
       slippage: 0.05,
-      deadline: 30,
     })
 
     console.log(output)
@@ -138,9 +134,7 @@ describe('Swap Module', () => {
       fromAmount: mulDecimals('1', CoinInfo['APTOS'].decimals),
       toAmount: mulDecimals('0.01584723', CoinInfo['BTC'].decimals),
       fixedCoin: 'from',
-      toAddress: SenderAddress,
       slippage: 0.05,
-      deadline: 30,
     })
 
     console.log(output)
@@ -173,7 +167,6 @@ describe('Swap Module', () => {
       amountX: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
       amountY: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       slippage: 0.05,
-      deadline: 30,
     })
 
     console.log(output)
@@ -201,7 +194,6 @@ describe('Swap Module', () => {
       amountXDesired: mulDecimals('0.116831', CoinInfo['APTOS'].decimals),
       amountYDesired: mulDecimals('0.001', CoinInfo['BTC'].decimals),
       slippage: 0.05,
-      deadline: 30,
     })
 
     console.log(output)
