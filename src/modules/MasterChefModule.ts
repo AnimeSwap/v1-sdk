@@ -9,7 +9,7 @@ import {
   composeMasterChefUserInfoPrefix,
   composeCoinStore,
 } from '../utils/contractComposeType'
-import { AptosCoinStoreResource, AptosResourceType, AptosTypeInfo } from '../types/aptos'
+import { AptosCoinStoreResource, AptosResourceType, AptosTypeInfo, Payload } from '../types/aptos'
 import { hexToString } from '../utils/hex'
 import {
   MasterChefData,
@@ -20,6 +20,7 @@ import {
 import { notEmpty } from '../utils/is'
 import Decimal from 'decimal.js'
 import { d } from '../utils/number'
+import { composeType } from '../utils'
 
 export type allPoolInfoList = {
   coinType: AptosResourceType
@@ -35,6 +36,17 @@ export type AllUserInfoReturn = [{
   coinType: AptosResourceType
   userInfo: UserInfoReturn
 }]
+
+export type StakeLPCoinPayload = {
+  amount: AptosResourceType
+  coinType: AptosResourceType
+  method: 'deposit' | 'withdraw'
+}
+
+export type StakeANIPayload = {
+  amount: AptosResourceType
+  method: 'enter_staking' | 'leave_staking'
+}
 
 const ACC_ANI_PRECISION = 1e12
 
@@ -209,6 +221,44 @@ export class MasterChefModule implements IModule {
       })
     }
     return coinType2userInfo
+  }
+
+  // deposit/withdraw LPCoin payload
+  stakeLPCoinPayload({
+    amount,
+    coinType,
+    method,
+  }: StakeLPCoinPayload): Payload {
+    const { modules } = this.sdk.networkOptions
+    const functionName = composeType(modules.MasterChefScripts, method)
+    const typeArguments = [
+      coinType,
+    ]
+    const args = [amount.toString()]
+
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      type_arguments: typeArguments,
+      arguments: args,
+    }
+  }
+
+  // enter_staking/leave_staking ANI payload
+  stakeANIPayload({
+    amount,
+    method,
+  }: StakeANIPayload): Payload {
+    const { modules } = this.sdk.networkOptions
+    const functionName = composeType(modules.MasterChefScripts, method)
+    const args = [amount.toString()]
+
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      type_arguments: [],
+      arguments: args,
+    }
   }
 }
 
