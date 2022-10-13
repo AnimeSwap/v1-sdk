@@ -214,9 +214,7 @@ Swap coin to exact coin mode
 ```typescript
 (async () => {
   const queryAddress = '0xA11ce'
-  const output = await sdk.swap.getAllLPCoinResourcesByAddress({
-    address: queryAddress,
-  })
+  const output = await sdk.swap.getAllLPCoinResourcesByAddress(queryAddress)
 
   /**
     output type:
