@@ -42,8 +42,8 @@ export function composePairInfo(address: string) {
   return composeType(address, AnimeSwapModule, AnimeSwapPairInfo)
 }
 
-export function composeCoinStore(coinStore: string, lpCoinType: string) {
-  return `${coinStore}<${lpCoinType}>`
+export function composeCoinStore(coinStore: string, coinType: string) {
+  return `${coinStore}<${coinType}>`
 }
 
 export function composeLiquidityPool(address: string) {

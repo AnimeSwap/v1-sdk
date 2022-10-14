@@ -1,6 +1,8 @@
 import Decimal from 'decimal.js'
 import { BigNumber } from '../types/common'
 
+Decimal.set({ toExpNeg: -9 })
+
 export function d(value?: BigNumber) : Decimal {
   if (Decimal.isDecimal(value)) {
     return value as Decimal
