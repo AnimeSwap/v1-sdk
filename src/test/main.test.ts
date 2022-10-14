@@ -3,7 +3,7 @@ import { mulDecimals, divDecimals } from '../utils/number'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
-  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::USDT',
+  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC',
 }
 
 const CoinInfo: { [key: string]: { decimals: number } } = {
