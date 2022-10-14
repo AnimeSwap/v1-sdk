@@ -271,8 +271,9 @@ function meta2UserInfoReturn(poolInfo: MasterChefPoolInfo, userInfo: MasterChefU
   const currentTimestamp = Math.floor(Date.now() / 1000)
   // let multipler = get_multiplier(pool.last_reward_timestamp, get_current_timestamp(), mc_data.bonus_multiplier);
   const multipler = d(mcData.bonus_multiplier).mul(d(currentTimestamp).sub(d(poolInfo.last_reward_timestamp)))
-  // let reward_ANI = multipler * mc_data.per_second_ANI * (pool.alloc_point as u128) / (mc_data.total_alloc_point as u128) * ((100 - mc_data.dev_percent) as u128) / 100u128;
-  const rewardAni = multipler.mul(mcData.per_second_ANI).mul(d(poolInfo.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dev_percent)).div(d(100))
+  // let reward_ANI = multipler * mc_data.per_second_ANI * (pool.alloc_point as u128) / (mc_data.total_alloc_point as u128) * ((100 - mc_data.dao_percent) as u128) / 100u128;
+  // FIXME @zzzkky devnet and testnet use different name for dao_percent / dev_percent
+  const rewardAni = multipler.mul(mcData.per_second_ANI).mul(d(poolInfo.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent ? mcData.dao_percent : mcData.dev_percent)).div(d(100))
   // pool.acc_ANI_per_share = pool.acc_ANI_per_share + reward_ANI * ACC_ANI_PRECISION / (lp_supply as u128);
   const accAniPerShare = d(poolInfo.acc_ANI_per_share).add(rewardAni.mul(d(ACC_ANI_PRECISION)).div(d(stakedTotal)))
   // let pending = (user_info.amount as u128) * pool.acc_ANI_per_share / ACC_ANI_PRECISION - user_info.reward_debt;
