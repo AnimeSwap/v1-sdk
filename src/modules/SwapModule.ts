@@ -488,7 +488,7 @@ export class SwapModule implements IModule {
       throw new Error('resources not found')
     }
     const lpCoinType = composeLPCoinType(modules.ResourceAccountAddress)
-    const regexStr = `^${modules.CoinStore}<(${lpCoinType}<(.+), ?(.+)>)>$`
+    const regexStr = `^${modules.CoinStore}<(${lpCoinType}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>)>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
       const regexResult = regex.exec(resource.type)
@@ -568,14 +568,14 @@ export class SwapModule implements IModule {
       throw new Error('resources not found')
     }
     const lpCoinType = composeLiquidityPool(modules.DeployerAddress)
-    const regexStr = `^${lpCoinType}<(.+?), ?(.+?), ?(.+)>$`
+    const regexStr = `^${lpCoinType}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
       const regexResult = regex.exec(resource.type)
       if (!regexResult) return null
       return {
         coinX: regexResult[1],
-        coinY: regexResult[2],
+        coinY: regexResult[3],
         coinXReserve: resource.data.coin_x_reserve.value,
         coinYReserve: resource.data.coin_y_reserve.value,
       }
