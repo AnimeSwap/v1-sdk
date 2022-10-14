@@ -84,11 +84,11 @@ export class SDK {
     const testnetOptions = {
       nativeCoin: '0x1::aptos_coin::AptosCoin',
       modules: {
-        Scripts: '0xf920ce46ae9befa1639ef751053ce5f3de5e526df6d598ef384880faaf6eac27::AnimeSwapPoolV1',
+        Scripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeSwapPoolV1f1',
         CoinInfo: '0x1::coin::CoinInfo',
         CoinStore: '0x1::coin::CoinStore',
-        DeployerAddress: '0xf920ce46ae9befa1639ef751053ce5f3de5e526df6d598ef384880faaf6eac27',
-        ResourceAccountAddress: '0xa4d0dab8e82ad65438ed171205c7322eb691285164e39668c1ecd3e944cef80d',
+        DeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
+        ResourceAccountAddress: '0x796900ebe1a1a54ff9e932f19c548f5c1af5c6e7d34965857ac2f7b1d1ab2cbf',
         AniAddress: '0x3e8c3184eef4aba3a91e2d99a08c47354320bc0b4d3ce7d5216d58ecacc0ef78::AnimeMasterChefV1::ANI',
         MasterChefScripts: '0x3e8c3184eef4aba3a91e2d99a08c47354320bc0b4d3ce7d5216d58ecacc0ef78::AnimeMasterChefV1',
         MasterChefDeployerAddress: '0x3e8c3184eef4aba3a91e2d99a08c47354320bc0b4d3ce7d5216d58ecacc0ef78',

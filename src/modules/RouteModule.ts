@@ -219,7 +219,7 @@ export class RouteModule implements IModule {
     amount = d(amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
-    const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
+    const swapPoolDataType = composeSwapPoolData(modules.Scripts)
     const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
       modules.ResourceAccountAddress,
       swapPoolDataType
@@ -254,7 +254,7 @@ export class RouteModule implements IModule {
     amount = d(amount)
     const { modules } = this.sdk.networkOptions
     const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
-    const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
+    const swapPoolDataType = composeSwapPoolData(modules.Scripts)
     const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
       modules.ResourceAccountAddress,
       swapPoolDataType

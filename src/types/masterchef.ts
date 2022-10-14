@@ -12,6 +12,7 @@ export type MasterChefPoolInfo = {
 
 export type MasterChefData = {
   bonus_multiplier: string
+  dev_percent: string
   dao_percent: string
   per_second_ANI: string
   start_timestamp: string

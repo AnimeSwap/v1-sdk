@@ -2,7 +2,6 @@ import { composeType, isSortedSymbols } from './contract'
 
 const LPCoinModule = 'LPCoinV1'
 const LPCoinType = 'LPCoin'
-const AnimeSwapModule = 'AnimeSwapPoolV1'
 const AnimeSwapLiquidityPool = 'LiquidityPool'
 const AnimeSwapAdminData = 'AdminData'
 const AnimeSwapPairInfo = 'PairInfo'
@@ -21,12 +20,12 @@ export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
   }
 }
 
-export function composeLP(deployerAddress: string, coin_x: string, coin_y: string) {
+export function composeLP(swapScript: string, coin_x: string, coin_y: string) {
   const isSorted = isSortedSymbols(coin_x, coin_y)
   if (isSorted) {
-    return composeType(deployerAddress, AnimeSwapModule, AnimeSwapLiquidityPool, [coin_x, coin_y])
+    return composeType(swapScript, AnimeSwapLiquidityPool, [coin_x, coin_y])
   } else {
-    return composeType(deployerAddress, AnimeSwapModule, AnimeSwapLiquidityPool, [coin_y, coin_x])
+    return composeType(swapScript, AnimeSwapLiquidityPool, [coin_y, coin_x])
   }
 }
 
@@ -34,20 +33,20 @@ export function composeLPCoinType(address: string) {
   return composeType(address, LPCoinModule, LPCoinType)
 }
 
-export function composeSwapPoolData(address: string) {
-  return composeType(address, AnimeSwapModule, AnimeSwapAdminData)
+export function composeSwapPoolData(swapScript: string) {
+  return composeType(swapScript, AnimeSwapAdminData)
 }
 
-export function composePairInfo(address: string) {
-  return composeType(address, AnimeSwapModule, AnimeSwapPairInfo)
+export function composePairInfo(swapScript: string) {
+  return composeType(swapScript, AnimeSwapPairInfo)
 }
 
 export function composeCoinStore(coinStore: string, coinType: string) {
   return `${coinStore}<${coinType}>`
 }
 
-export function composeLiquidityPool(address: string) {
-  return composeType(address, AnimeSwapModule, AnimeSwapLiquidityPool)
+export function composeLiquidityPool(swapScript: string) {
+  return composeType(swapScript, AnimeSwapLiquidityPool)
 }
 
 export function composeMasterChefLpList(address: string) {

@@ -172,7 +172,7 @@ export class SwapModule implements IModule {
    */
   async isPairExist(coinX: AptosResourceType, coinY: AptosResourceType): Promise<boolean> {
     const { modules } = this.sdk.networkOptions
-    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
+    const lpType = composeLP(modules.Scripts, coinX, coinY)
     try {
       await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
       return true
@@ -196,7 +196,7 @@ export class SwapModule implements IModule {
 
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(coinX, coinY)
-    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
+    const lpType = composeLP(modules.Scripts, coinX, coinY)
     const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
 
     if (!lp) {
@@ -274,7 +274,7 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(coinX, coinY)
     const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
-    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
+    const lpType = composeLP(modules.Scripts, coinX, coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -363,8 +363,8 @@ export class SwapModule implements IModule {
 
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(fromCoin, toCoin)
-    const lpType = composeLP(modules.DeployerAddress, fromCoin, toCoin)
-    const swapPoolDataType = composeSwapPoolData(modules.DeployerAddress)
+    const lpType = composeLP(modules.Scripts, fromCoin, toCoin)
+    const swapPoolDataType = composeSwapPoolData(modules.Scripts)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
@@ -537,7 +537,7 @@ export class SwapModule implements IModule {
    */
   async getAllPairs(): Promise<CoinPair[]> {
     const { modules } = this.sdk.networkOptions
-    const pairInfoType = composePairInfo(modules.DeployerAddress)
+    const pairInfoType = composePairInfo(modules.Scripts)
     const pairInfo = await this.sdk.resources.fetchAccountResource<PairInfoResource>(
       modules.ResourceAccountAddress,
       pairInfoType,
@@ -567,7 +567,7 @@ export class SwapModule implements IModule {
     if (!resources) {
       throw new Error('resources not found')
     }
-    const lpCoinType = composeLiquidityPool(modules.DeployerAddress)
+    const lpCoinType = composeLiquidityPool(modules.Scripts)
     const regexStr = `^${lpCoinType}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
@@ -600,7 +600,7 @@ export class SwapModule implements IModule {
     const { modules } = this.sdk.networkOptions
 
     const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
-    const lpType = composeLP(modules.DeployerAddress, coinX, coinY)
+    const lpType = composeLP(modules.Scripts, coinX, coinY)
 
     const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
