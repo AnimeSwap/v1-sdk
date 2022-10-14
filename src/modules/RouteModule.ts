@@ -12,10 +12,6 @@ import {
   withSlippage,
 } from './SwapModule'
 import { composeType } from '../utils/contract'
-import { composeSwapPoolData } from '../utils/contractComposeType'
-import {
-  SwapPoolData,
-} from '../types/swap'
 import Decimal from 'decimal.js'
 import { BigNumber } from '../types/common'
 
@@ -38,6 +34,7 @@ export type SwapCoinPayload = {
 }
 
 const U64MAX: Decimal = d('18446744073709551615') // 2^64-1
+const fee = d(30)
 
 export class RouteModule implements IModule {
   protected _sdk: SDK
@@ -217,19 +214,7 @@ export class RouteModule implements IModule {
     amount,
   }: SwapCoinParams): Promise<Trade[]> {
     amount = d(amount)
-    const { modules } = this.sdk.networkOptions
-    const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
-    const swapPoolDataType = composeSwapPoolData(modules.Scripts)
-    const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
-      modules.ResourceAccountAddress,
-      swapPoolDataType
-    )
-    const [pairList, swapPoolData] = await Promise.all([task1, task2])
-    if (!swapPoolData) {
-      throw new Error(`swapPoolData (${swapPoolDataType}) not found`)
-    }
-
-    const fee = d(swapPoolData.data.swap_fee)
+    const pairList = await this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const bestTrades = this.bestTradeExactIn(
       pairList,
       fromCoin,
@@ -252,19 +237,7 @@ export class RouteModule implements IModule {
     amount,
   }: SwapCoinParams): Promise<Trade[]> {
     amount = d(amount)
-    const { modules } = this.sdk.networkOptions
-    const task1 = this._sdk.swap.getAllLPCoinResourcesWithAdmin()
-    const swapPoolDataType = composeSwapPoolData(modules.Scripts)
-    const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
-      modules.ResourceAccountAddress,
-      swapPoolDataType
-    )
-    const [pairList, swapPoolData] = await Promise.all([task1, task2])
-    if (!swapPoolData) {
-      throw new Error(`swapPoolData (${swapPoolDataType}) not found`)
-    }
-
-    const fee = d(swapPoolData.data.swap_fee)
+    const pairList = await this._sdk.swap.getAllLPCoinResourcesWithAdmin()
     const bestTrades = this.bestTradeExactOut(
       pairList,
       fromCoin,

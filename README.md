@@ -69,7 +69,6 @@ If pair not exists, tx will create pair first
       amountX: amountIn,
       amountY: output.amount,
       slippage: 0.05, // 5%
-      deadline: 30,   // 30 seconds
     })
 
     /**
@@ -83,7 +82,6 @@ If pair not exists, tx will create pair first
       amountX: 1e8, // any amount you want
       amountY: 1e7, // any amount you want
       slippage: 0.05, // 5%
-      deadline: 30,   // 30 seconds
     })
 
     /**
@@ -159,9 +157,7 @@ Swap exact coin to coin mode
 
   const output = sdk.route.swapExactCoinForCoinPayload({
     trade: bestTrade,
-    toAddress: SenderAddress, // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,   // 5%
-    deadline: 30,     // 30 seconds
   })
 
   /**
@@ -199,9 +195,7 @@ Swap coin to exact coin mode
 
   const output = sdk.route.swapCoinForExactCoinPayload({
     trade: bestTrade,
-    toAddress: SenderAddress, // receive `toCoin` address. In the most case, should be the same as sender address
     slippage: 0.05,   // 5%
-    deadline: 30,     // 30 seconds
   })
 
   /**
