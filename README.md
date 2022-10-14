@@ -64,8 +64,8 @@ If pair not exists, tx will create pair first
     */
 
     const txPayload = sdk.swap.addLiquidityPayload({
-      coinX: CoinsMapping.APTOS,
-      coinY: CoinsMapping.BTC,
+      coinX: APTOS,
+      coinY: BTC,
       amountX: amountIn,
       amountY: output.amount,
       slippage: 0.05, // 5%
@@ -78,8 +78,8 @@ If pair not exists, tx will create pair first
   } else {
     // Create pair and add initial liquidity
     const txPayload = sdk.swap.addLiquidityPayload({
-      coinX: CoinsMapping.APTOS,
-      coinY: CoinsMapping.BTC,
+      coinX: APTOS,
+      coinY: BTC,
       amountX: 1e8, // any amount you want
       amountY: 1e7, // any amount you want
       slippage: 0.05, // 5%
@@ -214,9 +214,7 @@ Swap coin to exact coin mode
 ```typescript
 (async () => {
   const queryAddress = '0xA11ce'
-  const output = await sdk.swap.getAllLPCoinResourcesByAddress({
-    address: queryAddress,
-  })
+  const output = await sdk.swap.getAllLPCoinResourcesByAddress(queryAddress)
 
   /**
     output type:
