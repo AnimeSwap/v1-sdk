@@ -1,4 +1,4 @@
-import { composeType, isSortedSymbols } from './contract'
+import { composeType } from './contract'
 
 const LPCoinModule = 'LPCoinV1'
 const LPCoinType = 'LPCoin'
@@ -12,21 +12,11 @@ const AnimeMasterChefUserInfo = 'UserInfo'
 const AnimeMasterChefData = 'MasterChefData'
 
 export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
-  const isSorted = isSortedSymbols(coin_x, coin_y)
-  if (isSorted) {
-    return composeType(address, LPCoinModule, LPCoinType, [coin_x, coin_y])
-  } else {
-    return composeType(address, LPCoinModule, LPCoinType, [coin_y, coin_x])
-  }
+  return composeType(address, LPCoinModule, LPCoinType, [coin_x, coin_y])
 }
 
 export function composeLP(swapScript: string, coin_x: string, coin_y: string) {
-  const isSorted = isSortedSymbols(coin_x, coin_y)
-  if (isSorted) {
-    return composeType(swapScript, AnimeSwapLiquidityPool, [coin_x, coin_y])
-  } else {
-    return composeType(swapScript, AnimeSwapLiquidityPool, [coin_y, coin_x])
-  }
+  return composeType(swapScript, AnimeSwapLiquidityPool, [coin_x, coin_y])
 }
 
 export function composeLPCoinType(address: string) {

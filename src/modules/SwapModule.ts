@@ -11,7 +11,6 @@ import {
 } from '../types/aptos'
 import {
   SwapPoolResource,
-  SwapPoolData,
 } from '../types/swap'
 import { BigNumber } from '../types/common'
 import {
@@ -30,7 +29,6 @@ import {
   composeLPCoin,
   composeLPCoinType,
   composePairInfo,
-  composeSwapPoolData,
 } from '../utils/contractComposeType'
 
 export type AddLiquidityParams = {
@@ -86,7 +84,6 @@ export type SwapRatesParams = {
 export type SwapRatesReturn = {
   amount: Decimal
   amountWithSlippage: Decimal
-  priceImpact: Decimal
   coinFromDivCoinTo: Decimal
   coinToDivCoinFrom: Decimal
 }
@@ -153,6 +150,8 @@ export type LPCoinAPRReturn = {
   windowSeconds: Decimal
 }
 
+const fee = d(30)
+
 export class SwapModule implements IModule {
   protected _sdk: SDK
 
@@ -195,7 +194,6 @@ export class SwapModule implements IModule {
     amount = d(amount)
 
     const { modules } = this.sdk.networkOptions
-    const isSorted = isSortedSymbols(coinX, coinY)
     const lpType = composeLP(modules.Scripts, coinX, coinY)
     const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(modules.ResourceAccountAddress, lpType)
 
@@ -206,9 +204,7 @@ export class SwapModule implements IModule {
     const coinXReserve = d(lp.data.coin_x_reserve.value)
     const coinYReserve = d(lp.data.coin_y_reserve.value)
 
-    const [reserveX, reserveY] = isSorted
-      ? [coinXReserve, coinYReserve]
-      : [coinYReserve, coinXReserve]
+    const [reserveX, reserveY] = [coinXReserve, coinYReserve]
 
     const outputAmount =
       fixedCoin == 'X'
@@ -272,7 +268,6 @@ export class SwapModule implements IModule {
     amount = d(amount)
 
     const { modules } = this.sdk.networkOptions
-    const isSorted = isSortedSymbols(coinX, coinY)
     const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
     const lpType = composeLP(modules.Scripts, coinX, coinY)
 
@@ -298,9 +293,7 @@ export class SwapModule implements IModule {
     const coinXReserve = d(lp.data.coin_x_reserve.value)
     const coinYReserve = d(lp.data.coin_y_reserve.value)
 
-    const [reserveX, reserveY] = isSorted
-      ? [coinXReserve, coinYReserve]
-      : [coinYReserve, coinXReserve]
+    const [reserveX, reserveY] = [coinXReserve, coinYReserve]
 
     const coinXout = amount.mul(reserveX).div(lpSupply).floor()
     const coinYout = amount.mul(reserveY).div(lpSupply).floor()
@@ -363,26 +356,15 @@ export class SwapModule implements IModule {
 
     const { modules } = this.sdk.networkOptions
     const isSorted = isSortedSymbols(fromCoin, toCoin)
-    const lpType = composeLP(modules.Scripts, fromCoin, toCoin)
-    const swapPoolDataType = composeSwapPoolData(modules.Scripts)
+    const lpType = composeLP(modules.Scripts, isSorted ? fromCoin : toCoin, isSorted ? toCoin: fromCoin)
 
-    const task1 = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+    const lp = await this.sdk.resources.fetchAccountResource<SwapPoolResource>(
       modules.ResourceAccountAddress,
       lpType
     )
 
-    const task2 = this.sdk.resources.fetchAccountResource<SwapPoolData>(
-      modules.ResourceAccountAddress,
-      swapPoolDataType
-    )
-
-    const [lp, swapPoolData] = await Promise.all([task1, task2])
-
     if (!lp) {
       throw new Error(`LiquidityPool (${lpType}) not found`)
-    }
-    if (!swapPoolData) {
-      throw new Error(`SwapPoolData (${swapPoolDataType}) not found`)
     }
 
     const coinXReserve = d(lp.data.coin_x_reserve.value)
@@ -391,8 +373,6 @@ export class SwapModule implements IModule {
     const [reserveFrom, reserveTo] = isSorted
       ? [coinXReserve, coinYReserve]
       : [coinYReserve, coinXReserve]
-
-    const fee = d(swapPoolData.data.swap_fee)
 
     const outputCoins =
       isSorted
@@ -410,17 +390,9 @@ export class SwapModule implements IModule {
       ? outputCoins.div(amount)
       : amount.div(outputCoins)
 
-    const reserveFromDivReserveTo = reserveFrom.div(reserveTo)
-    const reserveToDivReserveFrom = reserveTo.div(reserveFrom)
-
-    const priceImpact = isSorted
-      ? coinFromDivCoinTo.sub(reserveFromDivReserveTo).div(reserveFromDivReserveTo)
-      : reserveToDivReserveFrom.sub(coinToDivCoinFrom).div(reserveToDivReserveFrom)
-
     return {
       amount: outputCoins,
       amountWithSlippage: amountWithSlippage,
-      priceImpact: priceImpact,
       coinFromDivCoinTo: coinFromDivCoinTo,
       coinToDivCoinFrom: coinToDivCoinFrom,
     }
