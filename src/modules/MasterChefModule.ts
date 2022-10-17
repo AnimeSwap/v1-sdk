@@ -61,7 +61,7 @@ export class MasterChefModule implements IModule {
     this._sdk = sdk
   }
 
-  async getLpInfoResources(): Promise<AptosResourceType[]> {
+  async getLPInfoResources(): Promise<AptosResourceType[]> {
     const { modules } = this.sdk.networkOptions
     const lpList = composeMasterChefLpList(modules.MasterChefDeployerAddress)
     const resource = await this.sdk.resources.fetchAccountResource<MasterChefLPInfo>(
