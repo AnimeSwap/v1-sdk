@@ -601,10 +601,10 @@ export class SwapModule implements IModule {
    * Get LPCoin apr at a given ledger verion window
    * The funciont will return apr and timestamp window
    * @param params coinPair
-   * @param deltaVersion? calculate apr with this version window. Default: 5000000
+   * @param deltaVersion calculate apr with this version window. Default: 5000000
    * @returns [apr, queryDeltaTimestampSeconds]
    */
-  async getLPCoinAPR(params: CoinPair, deltaVersion?: string): Promise<LPCoinAPRReturn> {
+  async getLPCoinAPR(params: CoinPair, deltaVersion?: Decimal | string): Promise<LPCoinAPRReturn> {
     const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
     const timestampNow = ledgerInfo.ledger_timestamp
     const currentLedgerVersion = ledgerInfo.ledger_version
