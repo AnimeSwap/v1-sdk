@@ -4,8 +4,8 @@ const coinType = '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d
 describe('Swap Module', () => {
   const sdk = new SDK('https://fullnode.devnet.aptoslabs.com')
 
-  test('getLpInfoResources', async () => {
-    const output = await sdk.MasterChef.getLpInfoResources()
+  test('getLPInfoResources', async () => {
+    const output = await sdk.MasterChef.getLPInfoResources()
     console.log(output)
     expect(output.length).toBeGreaterThan(0)
   })
