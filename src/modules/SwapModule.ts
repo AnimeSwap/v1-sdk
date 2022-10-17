@@ -460,15 +460,18 @@ export class SwapModule implements IModule {
       throw new Error('resources not found')
     }
     const lpCoinType = composeLPCoinType(modules.ResourceAccountAddress)
-    const regexStr = `^${modules.CoinStore}<(${lpCoinType}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>)>$`
+    const regexStr = `^${modules.CoinStore}<${lpCoinType}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
       const regexResult = regex.exec(resource.type)
       if (!regexResult) return null
+      const coinX = regexResult[1]
+      const coinY = regexResult[3]
+      const lpCoin = composeLPCoin(modules.ResourceAccountAddress, coinX, coinY)
       return {
-        coinX: regexResult[2],
-        coinY: regexResult[3],
-        lpCoin: regexResult[1],
+        coinX,
+        coinY,
+        lpCoin,
         value: resource.data.coin.value,
       }
     }).filter(notEmpty)
