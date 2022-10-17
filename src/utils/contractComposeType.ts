@@ -39,7 +39,7 @@ export function composeLiquidityPool(swapScript: string) {
   return composeType(swapScript, AnimeSwapLiquidityPool)
 }
 
-export function composeMasterChefLpList(address: string) {
+export function composeMasterChefLPList(address: string) {
   return composeType(address, AnimeMasterChefModule, AnimeMasterChefLPInfo)
 }
 

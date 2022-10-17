@@ -3,7 +3,7 @@ import { IModule } from '../interfaces/IModule'
 import {
   composeMasterChefPoolInfo,
   composeMasterChefPoolInfoPrefix,
-  composeMasterChefLpList,
+  composeMasterChefLPList,
   composeMasterChefData,
   composeMasterChefUserInfo,
   composeMasterChefUserInfoPrefix,
@@ -63,7 +63,7 @@ export class MasterChefModule implements IModule {
 
   async getLPInfoResources(): Promise<AptosResourceType[]> {
     const { modules } = this.sdk.networkOptions
-    const lpList = composeMasterChefLpList(modules.MasterChefDeployerAddress)
+    const lpList = composeMasterChefLPList(modules.MasterChefDeployerAddress)
     const resource = await this.sdk.resources.fetchAccountResource<MasterChefLPInfo>(
       modules.MasterChefDeployerAddress,
       lpList,
