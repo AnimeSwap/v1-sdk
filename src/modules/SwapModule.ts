@@ -161,7 +161,7 @@ export type SwapEventParams = {
   coinPair: CoinPair
   fieldName: string | 'pair_created_event' | 'mint_event' | 'burn_event' | 'swap_event' | 'sync_event' | 'flash_swap_event'
   query?: {
-    start?: BigInt | number
+    start?: bigint | number
     limit?: number
   }
 }
