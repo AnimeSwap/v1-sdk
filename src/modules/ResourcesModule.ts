@@ -67,12 +67,13 @@ export class ResourcesModule implements IModule {
     address: string,
     eventHandleStruct: string,
     fieldName: string,
-    query?: { start?: BigInt | number; limit?: number },
+    query?: { start?: BigInt | number, limit?: number },
   ): Promise<AptosEvent[]> {
     try {
       const response = await this._sdk.client.getEventsByEventHandle(address, eventHandleStruct, fieldName, query)
       return response as AptosEvent[]
     } catch (e: unknown) {
+      console.log(e)
       throw e
     }
   }

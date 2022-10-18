@@ -25,7 +25,7 @@ export async function parseAllLPCoins() {
     const [LPCoinsAPR, allLP] = await Promise.all([LPCoinsAPRTask, allLPTask])
     console.log(`APR window second: ${LPCoinsAPR.windowSeconds}`)
     const allLPCoins = allLP.filter(notEmpty).map(element => {
-        let apr = LPCoinsAPR.aprs[element.coinX][element.coinY]
+        const apr = LPCoinsAPR.aprs[element.coinX][element.coinY]
         const ret = {
             coinX: element.coinX,
             coinY: element.coinY,
@@ -62,7 +62,7 @@ export async function getCoinPairSwapEvents(coinPair: CoinPair, startVersion: st
         fieldName: 'swap_event',
         query: {
             limit: batchSize,
-        }
+        },
     }
     let events = await sdk.swap.getEvents(eventParams)
     allEvents.push(...events.filter(v => d(v.version).gt(d(startVersion)))) 
@@ -80,12 +80,12 @@ export async function getCoinPairSwapEvents(coinPair: CoinPair, startVersion: st
             query: {
                 start: start,
                 limit: limit,
-            }
+            },
         }
         events = await sdk.swap.getEvents(eventParams)
         allEvents.push(...events.filter(v => d(v.version).gt(d(startVersion))))
     }
-    let swapEventsGroup: SwapEventsGroup = {
+    const swapEventsGroup: SwapEventsGroup = {
         coinXIn: d(0),
         coinXOut: d(0),
         coinYIn: d(0),
