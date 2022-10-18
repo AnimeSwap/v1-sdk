@@ -4,6 +4,7 @@ import {
   address,
   AptosCoinInfoResource,
   AptosCoinStoreResource,
+  AptosEvent,
   AptosLedgerInfo,
   AptosResourceType,
   AptosTransaction,
@@ -29,6 +30,7 @@ import {
   composeLPCoin,
   composeLPCoinType,
   composePairInfo,
+  composeSwapEvent,
 } from '../utils/contractComposeType'
 
 export type AddLiquidityParams = {
@@ -149,6 +151,23 @@ export type LPCoinAPRReturn = {
   apr: Decimal
   windowSeconds: Decimal
 }
+
+export type LPCoinAPRBatchReturn = {
+  aprs: CoinX2coinY2Decimal
+  windowSeconds: Decimal
+}
+
+export type SwapEventParams = {
+  coinPair: CoinPair
+  fieldName: string | 'pair_created_event' | 'mint_event' | 'burn_event' | 'swap_event' | 'sync_event' | 'flash_swap_event'
+  query?: {
+    start?: bigint | number
+    limit?: number
+  }
+}
+
+// coinX -> coinY -> d
+type CoinX2coinY2Decimal = { [key: string]: { [key: string]: Decimal } }
 
 const fee = d(30)
 
@@ -597,6 +616,75 @@ export class SwapModule implements IModule {
     return pricePerLPCoin
   }
 
+  async getPricePerLPCoinBatch(ledgerVersion?: bigint | number): Promise<CoinX2coinY2Decimal> {
+    const { modules } = this.sdk.networkOptions
+
+    const allresources = await this.sdk.resources.fetchAccountResources<unknown>(
+      modules.ResourceAccountAddress,
+      ledgerVersion,
+    )
+    if (!allresources) {
+      throw new Error('resources not found')
+    }
+
+    const coinPair2SwapPoolResource: CoinX2coinY2Decimal= {}
+    const coinPair2LPSupply: CoinX2coinY2Decimal= {}
+    const coinPair2PricePerLPCoin: CoinX2coinY2Decimal= {}
+
+    const lpCoinType1 = composeLiquidityPool(modules.Scripts)
+    const regexStr1 = `^${lpCoinType1}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>$`
+    const lpCoinType2 = composeLPCoinType(modules.ResourceAccountAddress)
+    const regexStr2 = `^${modules.CoinInfo}<${lpCoinType2}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>>$`
+
+    allresources.forEach( resource => {
+      // try parse to SwapPoolResource
+      const swapPool = resource.data as SwapPoolResource
+      if (swapPool?.coin_x_reserve?.value && swapPool?.coin_y_reserve?.value) {
+        const regex = new RegExp(regexStr1, 'g')
+        const regexResult = regex.exec(resource.type)
+        if (regexResult) {
+          const coinX = regexResult[1]
+          const coinY = regexResult[3]
+          if (coinPair2SwapPoolResource[coinX]) {
+            coinPair2SwapPoolResource[coinX][coinY] = d(swapPool.coin_x_reserve.value).mul(d(swapPool.coin_y_reserve.value)).sqrt()
+          } else {
+            coinPair2SwapPoolResource[coinX] = {}
+            coinPair2SwapPoolResource[coinX][coinY] = d(swapPool.coin_x_reserve.value).mul(d(swapPool.coin_y_reserve.value)).sqrt()
+          }
+        }
+      }
+      // try parse to lpSupply
+      const coinInfo = resource.data as AptosCoinInfoResource
+      if (coinInfo?.supply?.vec[0]?.integer?.vec[0]?.value) {
+        const regex = new RegExp(regexStr2, 'g')
+        const regexResult = regex.exec(resource.type)
+        if (regexResult) {
+          const coinX = regexResult[1]
+          const coinY = regexResult[3]
+          if (coinPair2LPSupply[coinX]) {
+            coinPair2LPSupply[coinX][coinY] = d(coinInfo.supply.vec[0].integer.vec[0].value)
+          } else {
+            coinPair2LPSupply[coinX] = {}
+            coinPair2LPSupply[coinX][coinY] = d(coinInfo.supply.vec[0].integer.vec[0].value)
+          }
+        }
+      }
+    })
+
+    for (const coinX in coinPair2SwapPoolResource) {
+      for (const coinY in coinPair2SwapPoolResource[coinX]) {
+        if (coinPair2PricePerLPCoin[coinX]) {
+          coinPair2PricePerLPCoin[coinX][coinY] = coinPair2SwapPoolResource[coinX][coinY].div(coinPair2LPSupply[coinX][coinY])
+        } else {
+          coinPair2PricePerLPCoin[coinX] = {}
+          coinPair2PricePerLPCoin[coinX][coinY] = coinPair2SwapPoolResource[coinX][coinY].div(coinPair2LPSupply[coinX][coinY])
+        }
+      }
+    }
+
+    return coinPair2PricePerLPCoin
+  }
+
   /**
    * Get LPCoin apr at a given ledger verion window
    * The funciont will return apr and timestamp window
@@ -625,6 +713,61 @@ export class SwapModule implements IModule {
       apr,
       windowSeconds: deltaTimestamp.div(1000000).floor(),
     }
+  }
+
+  async getLPCoinAPRBatch(deltaVersion?: Decimal | string): Promise<LPCoinAPRBatchReturn> {
+    const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
+    const timestampNow = ledgerInfo.ledger_timestamp
+    const currentLedgerVersion = ledgerInfo.ledger_version
+    const oldestLedgerVersion = ledgerInfo.oldest_ledger_version
+    const queryDeltaVersion = deltaVersion ? deltaVersion : 1e6.toString()
+    const queryLedgerVersion =
+      d(currentLedgerVersion).sub(queryDeltaVersion).gte(d(oldestLedgerVersion))
+        ? d(currentLedgerVersion).sub(queryDeltaVersion)
+        : d(oldestLedgerVersion)
+    const task1 = this.getPricePerLPCoinBatch()
+    const task2 = this.getPricePerLPCoinBatch(BigInt(queryLedgerVersion.toString()))
+    const task3 = this.sdk.resources.fetchTransactionByVersion<AptosTransaction>(BigInt(queryLedgerVersion.toString()))
+    const [coinX2coinY2DecimalCurrent, coinX2coinY2DecimalPast, txn] = await Promise.all([task1, task2, task3])
+    const deltaTimestamp = d(timestampNow).sub(d(txn.timestamp))
+
+    const coinX2coinY2APR: CoinX2coinY2Decimal = {}
+
+    for (const coinX in coinX2coinY2DecimalCurrent) {
+      for (const coinY in coinX2coinY2DecimalCurrent[coinX]) {
+        // coinX2coinY2DecimalPast[coinX][coinY] maybe not exist, because the pair is not deployed at that time
+        if (coinX2coinY2DecimalPast[coinX] && coinX2coinY2DecimalPast[coinX][coinY]) {
+          const base = coinX2coinY2DecimalPast[coinX][coinY]
+          if (coinX2coinY2APR[coinX]) {
+            coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+          } else {
+            coinX2coinY2APR[coinX] = {}
+            coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+          }
+        } else {
+          if (coinX2coinY2APR[coinX]) {
+            coinX2coinY2APR[coinX][coinY] = d(NaN)
+          } else {
+            coinX2coinY2APR[coinX] = {}
+            coinX2coinY2APR[coinX][coinY] = d(NaN)
+          }
+        }
+      }
+    }
+
+    return {
+      aprs: coinX2coinY2APR,
+      windowSeconds: deltaTimestamp.div(1000000).floor(),
+    }
+  }
+
+  // get events by coinPair and eventType
+  async getEvents(params: SwapEventParams): Promise<AptosEvent[]> {
+    const { modules } = this.sdk.networkOptions
+    const eventHandleStruct = composeSwapEvent(modules.Scripts, params.coinPair.coinX, params.coinPair.coinY)
+
+    const events = await this.sdk.resources.getEventsByEventHandle(modules.ResourceAccountAddress, eventHandleStruct, params.fieldName, params.query)
+    return events
   }
 }
 
