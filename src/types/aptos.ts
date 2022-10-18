@@ -101,3 +101,11 @@ export type AptosTransaction = {
   accumulator_root_hash: string
   timestamp: string
 }
+
+export type AptosEvent = {
+  key: string
+  version: string
+  sequence_number: string
+  type: string
+  data: any
+}

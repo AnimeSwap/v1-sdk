@@ -1,6 +1,6 @@
 import { SDK } from '../sdk'
 import { IModule } from '../interfaces/IModule'
-import { AptosResource, AptosResourceType } from '../types/aptos'
+import { AptosEvent, AptosResource, AptosResourceType } from '../types/aptos'
 import { isAxiosError } from '../utils/is'
 
 export class ResourcesModule implements IModule {
@@ -59,6 +59,20 @@ export class ResourcesModule implements IModule {
       return response as unknown as T
     } catch (e: unknown) {
       console.log(e)
+      throw e
+    }
+  }
+
+  async getEventsByEventHandle(
+    address: string,
+    eventHandleStruct: string,
+    fieldName: string,
+    query?: { start?: BigInt | number; limit?: number },
+  ): Promise<AptosEvent[]> {
+    try {
+      const response = await this._sdk.client.getEventsByEventHandle(address, eventHandleStruct, fieldName, query)
+      return response as AptosEvent[]
+    } catch (e: unknown) {
       throw e
     }
   }

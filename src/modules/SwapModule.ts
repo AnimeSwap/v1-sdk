@@ -4,6 +4,7 @@ import {
   address,
   AptosCoinInfoResource,
   AptosCoinStoreResource,
+  AptosEvent,
   AptosLedgerInfo,
   AptosResourceType,
   AptosTransaction,
@@ -29,6 +30,7 @@ import {
   composeLPCoin,
   composeLPCoinType,
   composePairInfo,
+  composeSwapEvent,
 } from '../utils/contractComposeType'
 
 export type AddLiquidityParams = {
@@ -153,6 +155,15 @@ export type LPCoinAPRReturn = {
 export type LPCoinAPRBatchReturn = {
   aprs: CoinX2coinY2Decimal
   windowSeconds: Decimal
+}
+
+export type SwapEventParams = {
+  coinPair: CoinPair
+  fieldName: string | 'pair_created_event' | 'mint_event' | 'burn_event' | 'swap_event' | 'sync_event' | 'flash_swap_event'
+  query?: {
+    start?: BigInt | number
+    limit?: number
+  }
 }
 
 // coinX -> coinY -> d
@@ -748,6 +759,15 @@ export class SwapModule implements IModule {
       aprs: coinX2coinY2APR,
       windowSeconds: deltaTimestamp.div(1000000).floor(),
     }
+  }
+
+  // get events by coinPair and eventType
+  async getEvents(params: SwapEventParams): Promise<AptosEvent[]> {
+    const { modules } = this.sdk.networkOptions
+    const eventHandleStruct = composeSwapEvent(modules.Scripts, params.coinPair.coinX, params.coinPair.coinY)
+
+    const events = await this.sdk.resources.getEventsByEventHandle(modules.ResourceAccountAddress, eventHandleStruct, params.fieldName, params.query)
+    return events
   }
 }
 

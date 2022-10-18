@@ -5,6 +5,7 @@ const LPCoinType = 'LPCoin'
 const AnimeSwapLiquidityPool = 'LiquidityPool'
 const AnimeSwapAdminData = 'AdminData'
 const AnimeSwapPairInfo = 'PairInfo'
+const AnimeSwapEvent = 'Events'
 const AnimeMasterChefLPInfo = 'LPInfo'
 const AnimeMasterChefPoolInfo = 'PoolInfo'
 const AnimeMasterChefUserInfo = 'UserInfo'
@@ -36,6 +37,10 @@ export function composeCoinStore(coinStore: string, coinType: string) {
 
 export function composeLiquidityPool(swapScript: string) {
   return composeType(swapScript, AnimeSwapLiquidityPool)
+}
+
+export function composeSwapEvent(swapScript: string, coin_x: string, coin_y: string) {
+  return composeType(swapScript, AnimeSwapEvent, [coin_x, coin_y])
 }
 
 export function composeMasterChefLPList(mcScript: string) {
