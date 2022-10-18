@@ -150,6 +150,11 @@ export type LPCoinAPRReturn = {
   windowSeconds: Decimal
 }
 
+export type LPCoinAPRBatchReturn = {
+  aprs: CoinX2coinY2Decimal
+  windowSeconds: Decimal
+}
+
 // coinX -> coinY -> d
 type CoinX2coinY2Decimal = { [key: string]: { [key: string]: Decimal } }
 
@@ -603,12 +608,12 @@ export class SwapModule implements IModule {
   async getPricePerLPCoinBatch(ledgerVersion?: bigint | number): Promise<CoinX2coinY2Decimal> {
     const { modules } = this.sdk.networkOptions
 
-    const allresources = await this.sdk.resources.fetchAccountResources<Object>(
+    const allresources = await this.sdk.resources.fetchAccountResources<unknown>(
       modules.ResourceAccountAddress,
       ledgerVersion,
     )
     if (!allresources) {
-      throw new Error(`resources not found`)
+      throw new Error('resources not found')
     }
 
     const coinPair2SwapPoolResource: CoinX2coinY2Decimal= {}
@@ -699,12 +704,12 @@ export class SwapModule implements IModule {
     }
   }
 
-  async getLPCoinAPRBatch(deltaVersion?: Decimal | string): Promise<CoinX2coinY2Decimal> {
+  async getLPCoinAPRBatch(deltaVersion?: Decimal | string): Promise<LPCoinAPRBatchReturn> {
     const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
     const timestampNow = ledgerInfo.ledger_timestamp
     const currentLedgerVersion = ledgerInfo.ledger_version
     const oldestLedgerVersion = ledgerInfo.oldest_ledger_version
-    const queryDeltaVersion = deltaVersion ? deltaVersion : 3e6.toString()
+    const queryDeltaVersion = deltaVersion ? deltaVersion : 1e6.toString()
     const queryLedgerVersion =
       d(currentLedgerVersion).sub(queryDeltaVersion).gte(d(oldestLedgerVersion))
         ? d(currentLedgerVersion).sub(queryDeltaVersion)
@@ -719,17 +724,30 @@ export class SwapModule implements IModule {
 
     for (const coinX in coinX2coinY2DecimalCurrent) {
       for (const coinY in coinX2coinY2DecimalCurrent[coinX]) {
-        const base = (coinX2coinY2DecimalPast[coinX] && coinX2coinY2DecimalPast[coinX][coinY]) ? coinX2coinY2DecimalPast[coinX][coinY] : d(1)
-        if (coinX2coinY2APR[coinX]) {
-          coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+        // coinX2coinY2DecimalPast[coinX][coinY] maybe not exist, because the pair is not deployed at that time
+        if (coinX2coinY2DecimalPast[coinX] && coinX2coinY2DecimalPast[coinX][coinY]) {
+          const base = coinX2coinY2DecimalPast[coinX][coinY]
+          if (coinX2coinY2APR[coinX]) {
+            coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+          } else {
+            coinX2coinY2APR[coinX] = {}
+            coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+          }
         } else {
-          coinX2coinY2APR[coinX] = {}
-          coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+          if (coinX2coinY2APR[coinX]) {
+            coinX2coinY2APR[coinX][coinY] = d(NaN)
+          } else {
+            coinX2coinY2APR[coinX] = {}
+            coinX2coinY2APR[coinX][coinY] = d(NaN)
+          }
         }
       }
     }
 
-    return coinX2coinY2APR
+    return {
+      aprs: coinX2coinY2APR,
+      windowSeconds: deltaTimestamp.div(1000000).floor(),
+    }
   }
 }
 
