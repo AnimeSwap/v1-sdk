@@ -71,7 +71,7 @@ export class ResourcesModule implements IModule {
   ): Promise<AptosEvent[]> {
     try {
       const response = await this._sdk.client.getEventsByEventHandle(address, eventHandleStruct, fieldName, query)
-      return response as AptosEvent[]
+      return response as unknown as AptosEvent[]
     } catch (e: unknown) {
       console.log(e)
       throw e
