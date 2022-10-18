@@ -5,7 +5,6 @@ const LPCoinType = 'LPCoin'
 const AnimeSwapLiquidityPool = 'LiquidityPool'
 const AnimeSwapAdminData = 'AdminData'
 const AnimeSwapPairInfo = 'PairInfo'
-const AnimeMasterChefModule = 'AnimeMasterChefV1'
 const AnimeMasterChefLPInfo = 'LPInfo'
 const AnimeMasterChefPoolInfo = 'PoolInfo'
 const AnimeMasterChefUserInfo = 'UserInfo'
@@ -39,26 +38,26 @@ export function composeLiquidityPool(swapScript: string) {
   return composeType(swapScript, AnimeSwapLiquidityPool)
 }
 
-export function composeMasterChefLPList(address: string) {
-  return composeType(address, AnimeMasterChefModule, AnimeMasterChefLPInfo)
+export function composeMasterChefLPList(mcScript: string) {
+  return composeType(mcScript, AnimeMasterChefLPInfo)
 }
 
-export function composeMasterChefPoolInfo(address: string, coinType: string) {
-  return composeType(address, AnimeMasterChefModule, `${AnimeMasterChefPoolInfo}<${coinType}>`)
+export function composeMasterChefPoolInfo(mcScript: string, coinType: string) {
+  return composeType(mcScript, `${AnimeMasterChefPoolInfo}<${coinType}>`)
 }
   
-export function composeMasterChefPoolInfoPrefix(address: string) {
-  return composeType(address, AnimeMasterChefModule, AnimeMasterChefPoolInfo)
+export function composeMasterChefPoolInfoPrefix(mcScript: string) {
+  return composeType(mcScript, AnimeMasterChefPoolInfo)
 }
 
-export function composeMasterChefData(address: string) {
-  return composeType(address, AnimeMasterChefModule, AnimeMasterChefData)
+export function composeMasterChefData(mcScript: string) {
+  return composeType(mcScript, AnimeMasterChefData)
 }
 
-export function composeMasterChefUserInfo(address: string, coinType: string) {
-  return composeType(address, AnimeMasterChefModule, `${AnimeMasterChefUserInfo}<${coinType}>`)
+export function composeMasterChefUserInfo(mcScript: string, coinType: string) {
+  return composeType(mcScript, `${AnimeMasterChefUserInfo}<${coinType}>`)
 }
 
-export function composeMasterChefUserInfoPrefix(address: string) {
-  return composeType(address, AnimeMasterChefModule, AnimeMasterChefUserInfo)
+export function composeMasterChefUserInfoPrefix(mcScript: string) {
+  return composeType(mcScript, AnimeMasterChefUserInfo)
 }

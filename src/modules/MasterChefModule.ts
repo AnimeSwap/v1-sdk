@@ -63,9 +63,9 @@ export class MasterChefModule implements IModule {
 
   async getLPInfoResources(): Promise<AptosResourceType[]> {
     const { modules } = this.sdk.networkOptions
-    const lpList = composeMasterChefLPList(modules.MasterChefDeployerAddress)
+    const lpList = composeMasterChefLPList(modules.MasterChefScripts)
     const resource = await this.sdk.resources.fetchAccountResource<MasterChefLPInfo>(
-      modules.MasterChefDeployerAddress,
+      modules.MasterChefResourceAccountAddress,
       lpList,
     )
     if (!resource) {
@@ -79,7 +79,7 @@ export class MasterChefModule implements IModule {
 
   async getPoolInfoByCoinType(coinType: AptosResourceType): Promise<MasterChefPoolInfo> {
     const { modules } = this.sdk.networkOptions
-    const poolInfoType = composeMasterChefPoolInfo(modules.MasterChefDeployerAddress, coinType)
+    const poolInfoType = composeMasterChefPoolInfo(modules.MasterChefScripts, coinType)
     const resource = await this.sdk.resources.fetchAccountResource<MasterChefPoolInfo>(
       modules.MasterChefResourceAccountAddress,
       poolInfoType,
@@ -98,7 +98,7 @@ export class MasterChefModule implements IModule {
     if (!resources) {
       throw new Error('resources not found')
     }
-    const lpCoinTypePrefix = composeMasterChefPoolInfoPrefix(modules.MasterChefDeployerAddress)
+    const lpCoinTypePrefix = composeMasterChefPoolInfoPrefix(modules.MasterChefScripts)
     const regexStr = `^${lpCoinTypePrefix}<(.+)>$`
     const filteredResource = resources.map(resource => {
       const regex = new RegExp(regexStr, 'g')
@@ -114,9 +114,9 @@ export class MasterChefModule implements IModule {
 
   async getMasterChefData(): Promise<MasterChefData> {
     const { modules } = this.sdk.networkOptions
-    const dataType = composeMasterChefData(modules.MasterChefDeployerAddress)
+    const dataType = composeMasterChefData(modules.MasterChefScripts)
     const resource = await this.sdk.resources.fetchAccountResource<MasterChefData>(
-      modules.MasterChefDeployerAddress,
+      modules.MasterChefResourceAccountAddress,
       dataType,
     )
     if (!resource) {
@@ -127,7 +127,7 @@ export class MasterChefModule implements IModule {
 
   async getUserInfoByCoinType(userAddress: AptosResourceType, coinType: AptosResourceType): Promise<UserInfoReturn> {
     const { modules } = this.sdk.networkOptions
-    const userInfoType = composeMasterChefUserInfo(modules.MasterChefDeployerAddress, coinType)
+    const userInfoType = composeMasterChefUserInfo(modules.MasterChefScripts, coinType)
     const task1 = this.sdk.resources.fetchAccountResource<MasterChefUserInfo>(
       userAddress,
       userInfoType,
@@ -158,12 +158,12 @@ export class MasterChefModule implements IModule {
   async getUserInfoAll(userAddress: AptosResourceType): Promise<Map<string, UserInfoReturn>> {
     const { modules } = this.sdk.networkOptions
     // UserInfo
-    const userInfoTypePrefix = composeMasterChefUserInfoPrefix(modules.MasterChefDeployerAddress)
+    const userInfoTypePrefix = composeMasterChefUserInfoPrefix(modules.MasterChefScripts)
     const task1 = this.sdk.resources.fetchAccountResources<MasterChefUserInfo>(
       userAddress,
     )
     // PoolInfo
-    const lpCoinTypePrefix = composeMasterChefPoolInfoPrefix(modules.MasterChefDeployerAddress)
+    const lpCoinTypePrefix = composeMasterChefPoolInfoPrefix(modules.MasterChefScripts)
     const task2 = this.sdk.resources.fetchAccountResources<MasterChefPoolInfo>(
       modules.MasterChefResourceAccountAddress,
     )
