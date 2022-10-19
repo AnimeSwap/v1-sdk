@@ -1,4 +1,4 @@
-import SDK from '../main'
+import SDK, { NetworkType } from '../main'
 import { mulDecimals, divDecimals } from '../utils/number'
 
 const CoinsMapping: { [key: string]: string } = {
@@ -12,7 +12,7 @@ const CoinInfo: { [key: string]: { decimals: number } } = {
 }
 
 describe('Swap Module', () => {
-  const sdk = new SDK('https://fullnode.devnet.aptoslabs.com')
+  const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
 
   test('getAllPairs', async () => {
     const output = await sdk.swap.getAllPairs()
