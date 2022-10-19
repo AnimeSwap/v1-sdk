@@ -1,4 +1,4 @@
-import SDK from '../main'
+import SDK, { NetworkType } from '../main'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
@@ -6,7 +6,7 @@ const CoinsMapping: { [key: string]: string } = {
 }
 
 describe('Route Module', () => {
-  const sdk = new SDK('https://fullnode.devnet.aptoslabs.com')
+  const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
 
   test('getRouteSwapExactCoinForCoin (no route)', async () => {
     const trades = await sdk.route.getRouteSwapExactCoinForCoin({

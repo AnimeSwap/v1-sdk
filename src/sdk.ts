@@ -24,6 +24,7 @@ export type SdkOptions = {
 }
 
 export enum NetworkType {
+  Mainnet,
   Devnet,
   Testnet,
 }
@@ -67,6 +68,20 @@ export class SDK {
    * @param networkType? NetworkType
    */
   constructor(nodeUrl: string, networkType?: NetworkType) {
+    const mainnetOptions = {
+      nativeCoin: '0x1::aptos_coin::AptosCoin',
+      modules: {
+        Scripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeSwapPoolV1',
+        CoinInfo: '0x1::coin::CoinInfo',
+        CoinStore: '0x1::coin::CoinStore',
+        DeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
+        ResourceAccountAddress: '0x796900ebe1a1a54ff9e932f19c548f5c1af5c6e7d34965857ac2f7b1d1ab2cbf',
+        AniAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeMasterChefV1::ANI', // WIP
+        MasterChefScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeMasterChefV1', // WIP
+        MasterChefDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c', // WIP
+        MasterChefResourceAccountAddress: '0x8615f5671592532631e56c76ca09d332fae1cd03d463bc379eec1007973966ef', // WIP
+      },
+    }
     const devnetOptions = {
       nativeCoin: '0x1::aptos_coin::AptosCoin',
       modules: {
@@ -95,7 +110,8 @@ export class SDK {
         MasterChefResourceAccountAddress: '0x8615f5671592532631e56c76ca09d332fae1cd03d463bc379eec1007973966ef',
       },
     }
-    let networkOptions = devnetOptions  // default network
+    let networkOptions = mainnetOptions  // default network
+    if (networkType == NetworkType.Mainnet) networkOptions = mainnetOptions
     if (networkType == NetworkType.Devnet) networkOptions = devnetOptions
     if (networkType == NetworkType.Testnet) networkOptions = testnetOptions
     const options = {
