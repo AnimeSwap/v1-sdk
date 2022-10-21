@@ -4,8 +4,8 @@ import { NetworkType, SDK } from './sdk'
 import { AptosEvent } from './types/aptos'
 import { d, notEmpty } from './utils'
 
-// const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
-const sdk = new SDK('https://fullnode.testnet.aptoslabs.com', NetworkType.Testnet)
+const sdk = new SDK('https://fullnode.mainnet.aptoslabs.com', NetworkType.Mainnet)
+// const sdk = new SDK('https://fullnode.testnet.aptoslabs.com', NetworkType.Testnet)
 
 const coin2Reserve: { [key: string]: Decimal } = {}
 type SwapEventsGroup = {
@@ -40,12 +40,12 @@ export async function parseAllLPCoins() {
     // get all coin reserves
     allLPCoins.forEach(element => {
         if (coin2Reserve[element.coinX]) {
-            coin2Reserve[element.coinX].add(d(element.coinXReserve))
+            coin2Reserve[element.coinX] = coin2Reserve[element.coinX].add(d(element.coinXReserve))
         } else {
             coin2Reserve[element.coinX] = d(element.coinXReserve)
         }
         if (coin2Reserve[element.coinY]) {
-            coin2Reserve[element.coinY].add(d(element.coinYReserve))
+            coin2Reserve[element.coinY] = coin2Reserve[element.coinY].add(d(element.coinYReserve))
         } else {
             coin2Reserve[element.coinY] = d(element.coinYReserve)
         }
