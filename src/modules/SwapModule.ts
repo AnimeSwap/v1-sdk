@@ -6,6 +6,7 @@ import {
   AptosCoinStoreResource,
   AptosEvent,
   AptosLedgerInfo,
+  AptosResource,
   AptosResourceType,
   AptosTransaction,
   Payload,
@@ -153,7 +154,7 @@ export type LPCoinAPRReturn = {
 }
 
 export type LPCoinAPRBatchReturn = {
-  aprs: CoinX2coinY2Decimal
+  aprs: { [key: string]: Decimal } // key: coinX, coinY
   windowSeconds: Decimal
 }
 
@@ -165,9 +166,6 @@ export type SwapEventParams = {
     limit?: number
   }
 }
-
-// coinX -> coinY -> d
-type CoinX2coinY2Decimal = { [key: string]: { [key: string]: Decimal } }
 
 const fee = d(30)
 
@@ -616,27 +614,30 @@ export class SwapModule implements IModule {
     return pricePerLPCoin
   }
 
-  async getPricePerLPCoinBatch(ledgerVersion?: bigint | number): Promise<CoinX2coinY2Decimal> {
+  // ledgerVersion undefined for now
+  async getPricePerLPCoinBatch(ledgerVersion: bigint | number | undefined, allResources?: AptosResource<unknown>[]): Promise<{ [key: string]: Decimal }> {
     const { modules } = this.sdk.networkOptions
 
-    const allresources = await this.sdk.resources.fetchAccountResources<unknown>(
-      modules.ResourceAccountAddress,
-      ledgerVersion,
-    )
-    if (!allresources) {
+    if (!allResources) {
+      allResources = await this.sdk.resources.fetchAccountResources<unknown>(
+        modules.ResourceAccountAddress,
+        ledgerVersion,
+      )
+    }
+    if (!allResources) {
       throw new Error('resources not found')
     }
 
-    const coinPair2SwapPoolResource: CoinX2coinY2Decimal= {}
-    const coinPair2LPSupply: CoinX2coinY2Decimal= {}
-    const coinPair2PricePerLPCoin: CoinX2coinY2Decimal= {}
+    const coinPair2SwapPoolResource: { [key: string]: Decimal } = {}
+    const coinPair2LPSupply: { [key: string]: Decimal } = {}
+    const coinPair2PricePerLPCoin: { [key: string]: Decimal } = {}
 
     const lpCoinType1 = composeLiquidityPool(modules.Scripts)
     const regexStr1 = `^${lpCoinType1}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>$`
     const lpCoinType2 = composeLPCoinType(modules.ResourceAccountAddress)
     const regexStr2 = `^${modules.CoinInfo}<${lpCoinType2}<(.+?::.+?::.+?(<.+>)?), (.+?::.+?::.+?(<.+>)?)>>$`
 
-    allresources.forEach( resource => {
+    allResources.forEach(resource => {
       // try parse to SwapPoolResource
       const swapPool = resource.data as SwapPoolResource
       if (swapPool?.coin_x_reserve?.value && swapPool?.coin_y_reserve?.value) {
@@ -645,12 +646,7 @@ export class SwapModule implements IModule {
         if (regexResult) {
           const coinX = regexResult[1]
           const coinY = regexResult[3]
-          if (coinPair2SwapPoolResource[coinX]) {
-            coinPair2SwapPoolResource[coinX][coinY] = d(swapPool.coin_x_reserve.value).mul(d(swapPool.coin_y_reserve.value)).sqrt()
-          } else {
-            coinPair2SwapPoolResource[coinX] = {}
-            coinPair2SwapPoolResource[coinX][coinY] = d(swapPool.coin_x_reserve.value).mul(d(swapPool.coin_y_reserve.value)).sqrt()
-          }
+          coinPair2SwapPoolResource[`${coinX}, ${coinY}`] = d(swapPool.coin_x_reserve.value).mul(d(swapPool.coin_y_reserve.value)).sqrt()
         }
       }
       // try parse to lpSupply
@@ -661,25 +657,13 @@ export class SwapModule implements IModule {
         if (regexResult) {
           const coinX = regexResult[1]
           const coinY = regexResult[3]
-          if (coinPair2LPSupply[coinX]) {
-            coinPair2LPSupply[coinX][coinY] = d(coinInfo.supply.vec[0].integer.vec[0].value)
-          } else {
-            coinPair2LPSupply[coinX] = {}
-            coinPair2LPSupply[coinX][coinY] = d(coinInfo.supply.vec[0].integer.vec[0].value)
-          }
+          coinPair2LPSupply[`${coinX}, ${coinY}`] = d(coinInfo.supply.vec[0].integer.vec[0].value)
         }
       }
     })
 
-    for (const coinX in coinPair2SwapPoolResource) {
-      for (const coinY in coinPair2SwapPoolResource[coinX]) {
-        if (coinPair2PricePerLPCoin[coinX]) {
-          coinPair2PricePerLPCoin[coinX][coinY] = coinPair2SwapPoolResource[coinX][coinY].div(coinPair2LPSupply[coinX][coinY])
-        } else {
-          coinPair2PricePerLPCoin[coinX] = {}
-          coinPair2PricePerLPCoin[coinX][coinY] = coinPair2SwapPoolResource[coinX][coinY].div(coinPair2LPSupply[coinX][coinY])
-        }
-      }
+    for (const key of Object.keys(coinPair2SwapPoolResource)) {
+      coinPair2PricePerLPCoin[key] = coinPair2SwapPoolResource[key].div(coinPair2LPSupply[key])
     }
 
     return coinPair2PricePerLPCoin
@@ -725,39 +709,26 @@ export class SwapModule implements IModule {
       d(currentLedgerVersion).sub(queryDeltaVersion).gte(d(oldestLedgerVersion))
         ? d(currentLedgerVersion).sub(queryDeltaVersion)
         : d(oldestLedgerVersion)
-    const task1 = this.getPricePerLPCoinBatch()
+    const task1 = this.getPricePerLPCoinBatch(undefined)
     const task2 = this.getPricePerLPCoinBatch(BigInt(queryLedgerVersion.toString()))
     const task3 = this.sdk.resources.fetchTransactionByVersion<AptosTransaction>(BigInt(queryLedgerVersion.toString()))
     const [coinX2coinY2DecimalCurrent, coinX2coinY2DecimalPast, txn] = await Promise.all([task1, task2, task3])
     const deltaTimestamp = d(timestampNow).sub(d(txn.timestamp))
 
-    const coinX2coinY2APR: CoinX2coinY2Decimal = {}
+    const coinX2coinY2APR: { [key: string]: Decimal } = {}
 
-    for (const coinX in coinX2coinY2DecimalCurrent) {
-      for (const coinY in coinX2coinY2DecimalCurrent[coinX]) {
-        // coinX2coinY2DecimalPast[coinX][coinY] maybe not exist, because the pair is not deployed at that time
-        if (coinX2coinY2DecimalPast[coinX] && coinX2coinY2DecimalPast[coinX][coinY]) {
-          const base = coinX2coinY2DecimalPast[coinX][coinY]
-          if (coinX2coinY2APR[coinX]) {
-            coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
-          } else {
-            coinX2coinY2APR[coinX] = {}
-            coinX2coinY2APR[coinX][coinY] = coinX2coinY2DecimalCurrent[coinX][coinY].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
-          }
-        } else {
-          if (coinX2coinY2APR[coinX]) {
-            coinX2coinY2APR[coinX][coinY] = d(NaN)
-          } else {
-            coinX2coinY2APR[coinX] = {}
-            coinX2coinY2APR[coinX][coinY] = d(NaN)
-          }
-        }
+    for (const key of Object.keys(coinX2coinY2DecimalCurrent)) {
+      const base = coinX2coinY2DecimalPast[key]
+      if (base) {
+        coinX2coinY2APR[key] = coinX2coinY2DecimalCurrent[key].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+      } else {
+        coinX2coinY2APR[key] = d(0)
       }
     }
 
     return {
       aprs: coinX2coinY2APR,
-      windowSeconds: deltaTimestamp.div(1000000).floor(),
+      windowSeconds: deltaTimestamp.div(1e6).floor(),
     }
   }
 
