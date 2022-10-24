@@ -20,7 +20,7 @@ import {
   extractAddressFromType,
   isSortedSymbols,
 } from '../utils/contract'
-import { d } from '../utils/number'
+import { d, YEAR_NS } from '../utils/number'
 import Decimal from 'decimal.js'
 import { hexToString } from '../utils/hex'
 import { notEmpty } from '../utils/is'
@@ -148,13 +148,13 @@ export type PairInfoResource = {
   pair_list: PairListResource
 }
 
-export type LPCoinAPRReturn = {
-  apr: Decimal
+export type LPCoinAPYReturn = {
+  apy: Decimal
   windowSeconds: Decimal
 }
 
-export type LPCoinAPRBatchReturn = {
-  aprs: { [key: string]: Decimal } // key: coinX, coinY
+export type LPCoinAPYBatchReturn = {
+  apys: { [key: string]: Decimal } // key: coinX, coinY
   windowSeconds: Decimal
 }
 
@@ -582,7 +582,7 @@ export class SwapModule implements IModule {
    * Get price per LPCoin at a given ledger version
    * The pricePerLPCoin of a new created LPCoin should be equal to `1`, and will increate when getting swap fee
    * @param params coinPair
-   * @param ledgerVersion? calculate apr with this version window. Default: latest
+   * @param ledgerVersion? calculate apy with this version window. Default: latest
    * @returns pricePerLPCoin
    */
   async getPricePerLPCoin({
@@ -670,13 +670,13 @@ export class SwapModule implements IModule {
   }
 
   /**
-   * Get LPCoin apr at a given ledger verion window
-   * The funciont will return apr and timestamp window
+   * Get LPCoin apy at a given ledger verion window
+   * The funciont will return apy and timestamp window
    * @param params coinPair
-   * @param deltaVersion calculate apr with this version window. Default: 5000000
-   * @returns [apr, queryDeltaTimestampSeconds]
+   * @param deltaVersion calculate apy with this version window. Default: 5000000
+   * @returns [apy, queryDeltaTimestampSeconds]
    */
-  async getLPCoinAPR(params: CoinPair, deltaVersion?: Decimal | string): Promise<LPCoinAPRReturn> {
+  async getLPCoinAPY(params: CoinPair, deltaVersion?: Decimal | string): Promise<LPCoinAPYReturn> {
     const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
     const timestampNow = ledgerInfo.ledger_timestamp
     const currentLedgerVersion = ledgerInfo.ledger_version
@@ -692,14 +692,14 @@ export class SwapModule implements IModule {
     const task3 = this.sdk.resources.fetchTransactionByVersion<AptosTransaction>(BigInt(queryLedgerVersion.toString()))
     const [currentPricePerLPCoin, queryPricePerLPCoin, txn] = await Promise.all([task1, task2, task3])
     const deltaTimestamp = d(timestampNow).sub(d(txn.timestamp))
-    const apr = currentPricePerLPCoin.sub(queryPricePerLPCoin).div(queryPricePerLPCoin).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+    const apy = currentPricePerLPCoin.sub(queryPricePerLPCoin).div(queryPricePerLPCoin).mul(YEAR_NS).div(deltaTimestamp)
     return {
-      apr,
-      windowSeconds: deltaTimestamp.div(1000000).floor(),
+      apy,
+      windowSeconds: deltaTimestamp.div(1e6).floor(),
     }
   }
 
-  async getLPCoinAPRBatch(deltaVersion?: Decimal | string): Promise<LPCoinAPRBatchReturn> {
+  async getLPCoinAPRBatch(deltaVersion?: Decimal | string): Promise<LPCoinAPYBatchReturn> {
     const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
     const timestampNow = ledgerInfo.ledger_timestamp
     const currentLedgerVersion = ledgerInfo.ledger_version
@@ -715,19 +715,19 @@ export class SwapModule implements IModule {
     const [coinX2coinY2DecimalCurrent, coinX2coinY2DecimalPast, txn] = await Promise.all([task1, task2, task3])
     const deltaTimestamp = d(timestampNow).sub(d(txn.timestamp))
 
-    const coinX2coinY2APR: { [key: string]: Decimal } = {}
+    const coinX2coinY2APY: { [key: string]: Decimal } = {}
 
     for (const key of Object.keys(coinX2coinY2DecimalCurrent)) {
       const base = coinX2coinY2DecimalPast[key]
       if (base) {
-        coinX2coinY2APR[key] = coinX2coinY2DecimalCurrent[key].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
+        coinX2coinY2APY[key] = coinX2coinY2DecimalCurrent[key].sub(base).div(base).mul(YEAR_NS).div(deltaTimestamp)
       } else {
-        coinX2coinY2APR[key] = d(NaN)
+        coinX2coinY2APY[key] = d(NaN)
       }
     }
 
     return {
-      aprs: coinX2coinY2APR,
+      apys: coinX2coinY2APY,
       windowSeconds: deltaTimestamp.div(1e6).floor(),
     }
   }

@@ -25,7 +25,7 @@ export async function parseAllLPCoins() {
     const [LPCoinsAPR, allLP] = await Promise.all([LPCoinsAPRTask, allLPTask])
     console.log(`APR window second: ${LPCoinsAPR.windowSeconds}`)
     const allLPCoins = allLP.filter(notEmpty).map(element => {
-        const apr = LPCoinsAPR.aprs[`${element.coinX}, ${element.coinY}`]
+        const apr = LPCoinsAPR.apys[`${element.coinX}, ${element.coinY}`]
         const ret = {
             coinX: element.coinX,
             coinY: element.coinY,
