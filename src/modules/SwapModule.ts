@@ -699,7 +699,7 @@ export class SwapModule implements IModule {
     }
   }
 
-  async getLPCoinAPRBatch(deltaVersion?: Decimal | string): Promise<LPCoinAPYBatchReturn> {
+  async getLPCoinAPYBatch(deltaVersion?: Decimal | string): Promise<LPCoinAPYBatchReturn> {
     const ledgerInfo = await this.sdk.resources.fetchLedgerInfo<AptosLedgerInfo>()
     const timestampNow = ledgerInfo.ledger_timestamp
     const currentLedgerVersion = ledgerInfo.ledger_version
