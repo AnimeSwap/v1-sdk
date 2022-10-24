@@ -722,7 +722,7 @@ export class SwapModule implements IModule {
       if (base) {
         coinX2coinY2APR[key] = coinX2coinY2DecimalCurrent[key].sub(base).div(base).mul(365 * 86400 * 1000 * 1000).div(deltaTimestamp)
       } else {
-        coinX2coinY2APR[key] = d(0)
+        coinX2coinY2APR[key] = d(NaN)
       }
     }
 
