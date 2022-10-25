@@ -19,13 +19,13 @@ type SwapEventsGroup = {
 export async function parseAllLPCoins() {
     // lpCoin apr, maybe NaN if pair not exist at the given ledger version
     // LPCoinsAPR: { [key: string]: { [key: string]: Decimal } }
-    const LPCoinsAPRTask = sdk.swap.getLPCoinAPRBatch(d(2e6))
+    const LPCoinsAPRTask = sdk.swap.getLPCoinAPYBatch(d(2e6))
     // get all lp coins
     const allLPTask = sdk.swap.getAllLPCoinResourcesWithAdmin()
     const [LPCoinsAPR, allLP] = await Promise.all([LPCoinsAPRTask, allLPTask])
     console.log(`APR window second: ${LPCoinsAPR.windowSeconds}`)
     const allLPCoins = allLP.filter(notEmpty).map(element => {
-        const apr = LPCoinsAPR.aprs[element.coinX][element.coinY]
+        const apr = LPCoinsAPR.apys[`${element.coinX}, ${element.coinY}`]
         const ret = {
             coinX: element.coinX,
             coinY: element.coinY,

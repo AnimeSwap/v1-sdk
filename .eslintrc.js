@@ -18,6 +18,7 @@ module.exports = {
     'quotes': ['error', 'single'],
     'eol-last': ['error', 'always'],
     'comma-dangle': ['error', 'always-multiline'],
+    '@typescript-eslint/no-explicit-any': [0],
     '@typescript-eslint/member-delimiter-style': ['error', {
       'multiline': {
         'delimiter': 'none',

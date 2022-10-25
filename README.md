@@ -253,7 +253,7 @@ Swap coin to exact coin mode
   const APTOS = '0x1::aptos_coin::AptosCoin'
   const BTC = '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC'
 
-  const output = await sdk.swap.getLPCoinAPR({
+  const output = await sdk.swap.getLPCoinAPY({
     coinX: APTOS,
     coinY: BTC,
   })

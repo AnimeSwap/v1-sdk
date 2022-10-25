@@ -58,7 +58,7 @@ describe('Swap Module', () => {
   })
 
   test('getLPCoinAPR', async () => {
-    const output = await sdk.swap.getLPCoinAPR({
+    const output = await sdk.swap.getLPCoinAPY({
       coinX: CoinsMapping.APTOS,
       coinY: CoinsMapping.BTC,
     }, 1e3.toString())
