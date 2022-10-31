@@ -8,8 +8,17 @@ import {
   composeMasterChefUserInfo,
   composeMasterChefUserInfoPrefix,
   composeCoinStore,
+  composeLPCoin,
+  composeLP,
 } from '../utils/contractComposeType'
-import { AptosCoinStoreResource, AptosResource, AptosResourceType, AptosTypeInfo, Payload } from '../types/aptos'
+import {
+  AptosCoinInfoResource,
+  AptosCoinStoreResource,
+  AptosResource,
+  AptosResourceType,
+  AptosTypeInfo,
+  Payload,
+} from '../types/aptos'
 import { hexToString } from '../utils/hex'
 import {
   MasterChefData,
@@ -19,8 +28,10 @@ import {
 } from '../types/masterchef'
 import { notEmpty } from '../utils/is'
 import Decimal from 'decimal.js'
-import { d } from '../utils/number'
+import { d, YEAR_S } from '../utils/number'
 import { composeType } from '../utils'
+import { CoinPair } from './SwapModule'
+import { SwapPoolResource } from '../main'
 
 export type AllPoolInfoList = {
   coinType: AptosResourceType
@@ -215,6 +226,57 @@ export class MasterChefModule implements IModule {
       })
     }
     return coinType2userInfo
+  }
+
+  async getFirstTwoPairStakingApr() : Promise<[Decimal, Decimal]> {
+    const { modules } = this.sdk.networkOptions
+    const mcData = await this.getMasterChefData()
+    const ani = modules.AniAddress
+    const pair: CoinPair = {
+      coinX: this.sdk.networkOptions.nativeCoin,
+      coinY: modules.AniAddress,
+    }
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, pair.coinX, pair.coinY)
+    const stakedANITask = this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(
+      modules.MasterChefResourceAccountAddress,
+      composeCoinStore(modules.CoinStore, ani)
+    )
+    const stakedLPCoinTask = this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(
+      modules.MasterChefResourceAccountAddress,
+      composeCoinStore(modules.CoinStore, lpCoin)
+    )
+    const coinInfoTask = this.sdk.resources.fetchAccountResource<AptosCoinInfoResource>(
+      modules.ResourceAccountAddress,
+      composeType(modules.CoinInfo, [lpCoin])
+    )
+    const swapPoolTask = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+      modules.ResourceAccountAddress,
+      composeLP(modules.Scripts, pair.coinX, pair.coinY),
+    )
+    const aniPoolInfoTask = this.getPoolInfoByCoinType(ani)
+    const lpCoinPoolInfoTask = this.getPoolInfoByCoinType(lpCoin)
+
+    const [stakedANIResponse, stakedLPCoinResponse, coinInfoResponse, swapPoolResponse, aniPoolInfoResponse, lpCoinPoolInfoResponse] =
+      await Promise.all([stakedANITask, stakedLPCoinTask, coinInfoTask, swapPoolTask, aniPoolInfoTask, lpCoinPoolInfoTask])
+
+    if (!stakedANIResponse || !stakedLPCoinResponse || !coinInfoResponse || !swapPoolResponse || !aniPoolInfoResponse || !lpCoinPoolInfoResponse) {
+      throw new Error('resource not found')
+    }
+    
+    const lpSupply = coinInfoResponse.data.supply.vec[0].integer.vec[0].value // lp total supply
+    const stakedLPCoin = stakedLPCoinResponse.data.coin.value
+
+    const stakedANI = stakedANIResponse.data.coin.value
+    // staked lpCoin value equals to ANI amount value
+    const lpCoinValue2ANI = d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)).mul(2)
+
+    const interestANI1 = d(mcData.per_second_ANI).mul(d(aniPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
+    const aprANI = interestANI1.add(stakedANI).div(stakedANI)
+
+    const interestANI2 = d(mcData.per_second_ANI).mul(d(lpCoinPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
+    const lpCoinANI = interestANI2.add(lpCoinValue2ANI).div(lpCoinValue2ANI)
+
+    return [aprANI, lpCoinANI]
   }
 
   // deposit/withdraw LPCoin payload

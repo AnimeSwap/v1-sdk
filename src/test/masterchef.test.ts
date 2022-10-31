@@ -40,6 +40,12 @@ describe('Swap Module', () => {
     expect(1).toBe(1)
   })
 
+  test('getFirstTwoPairStakingApr', async () => {
+    const output = await sdk.MasterChef.getFirstTwoPairStakingApr()
+    console.log(output)
+    expect(1).toBe(1)
+  })
+
   test('stakeLPCoinPayload', async () => {
     const output = sdk.MasterChef.stakeLPCoinPayload({
       amount: '100000000',

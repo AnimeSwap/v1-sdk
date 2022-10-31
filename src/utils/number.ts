@@ -28,3 +28,4 @@ export function divDecimals(amount: BigNumber, decimals: BigNumber) : Decimal {
 
 export const BP = d(1).div(10000) // 1BP is 0.01%
 export const YEAR_NS = 365 * 86400 * 1000 * 1000
+export const YEAR_S = 365 * 86400
