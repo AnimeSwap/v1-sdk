@@ -1,7 +1,7 @@
 import SDK, { NetworkType } from '../main'
 const coinType = '0x796900ebe1a1a54ff9e932f19c548f5c1af5c6e7d34965857ac2f7b1d1ab2cbf::LPCoinV1::LPCoin<0x1::aptos_coin::AptosCoin,0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI>'
 
-describe('Swap Module', () => {
+describe('Masterchef Module', () => {
   const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
 
   test('getLPInfoResources', async () => {
