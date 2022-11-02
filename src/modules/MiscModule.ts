@@ -41,6 +41,11 @@ export class MiscModule implements IModule {
     this._sdk = sdk
   }
 
+  /**
+   * Check user's airdrop balance
+   * @param address user's address, will auto-remove prefix 0s
+   * @returns airdrop balance. If no airdrop, return NaN. If already claimed, return 0.
+   */
   async checkUserAirdropBalance(address: AptosResourceType): Promise<Decimal> {
     const { misc } = this.sdk.networkOptions
     // remove left 0
