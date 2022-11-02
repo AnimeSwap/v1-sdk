@@ -3,7 +3,7 @@ import { mulDecimals, divDecimals } from '../utils/number'
 
 const CoinsMapping: { [key: string]: string } = {
   APTOS: '0x1::aptos_coin::AptosCoin',
-  BTC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC',
+  BTC: '0xae478ff7d83ed072dbc5e264250e67ef58f57c99d89b447efd8a0a2e8b2be76e::coin::T',
 }
 
 const CoinInfo: { [key: string]: { decimals: number } } = {
@@ -12,7 +12,7 @@ const CoinInfo: { [key: string]: { decimals: number } } = {
 }
 
 describe('Swap Module', () => {
-  const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
+  const sdk = new SDK('https://fullnode.mainnet.aptoslabs.com', NetworkType.Mainnet)
 
   test('getAllPairs', async () => {
     const output = await sdk.swap.getAllPairs()

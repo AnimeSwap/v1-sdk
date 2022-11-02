@@ -1,5 +1,5 @@
 import SDK, { NetworkType } from '../main'
-const coinType = '0xe73ee18380b91e37906a728540d2c8ac7848231a26b99ee5631351b3543d7cf2::LPCoinV1::LPCoin<0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::BTC, 0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::TestCoinsV1::USDT>>'
+const coinType = '0x796900ebe1a1a54ff9e932f19c548f5c1af5c6e7d34965857ac2f7b1d1ab2cbf::LPCoinV1::LPCoin<0x1::aptos_coin::AptosCoin,0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI>'
 
 describe('Swap Module', () => {
   const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
@@ -36,6 +36,12 @@ describe('Swap Module', () => {
 
   test('getUserInfoAll', async () => {
     const output = await sdk.MasterChef.getUserInfoAll(sdk.networkOptions.modules.MasterChefDeployerAddress)
+    console.log(output)
+    expect(1).toBe(1)
+  })
+
+  test('getFirstTwoPairStakingApr', async () => {
+    const output = await sdk.MasterChef.getFirstTwoPairStakingApr()
     console.log(output)
     expect(1).toBe(1)
   })

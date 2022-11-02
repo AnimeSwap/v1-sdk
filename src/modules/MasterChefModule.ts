@@ -7,9 +7,15 @@ import {
   composeMasterChefData,
   composeMasterChefUserInfo,
   composeMasterChefUserInfoPrefix,
-  composeCoinStore,
+  composeLPCoin,
+  composeLP,
 } from '../utils/contractComposeType'
-import { AptosCoinStoreResource, AptosResourceType, AptosTypeInfo, Payload } from '../types/aptos'
+import {
+  AptosCoinInfoResource,
+  AptosResourceType,
+  AptosTypeInfo,
+  Payload,
+} from '../types/aptos'
 import { hexToString } from '../utils/hex'
 import {
   MasterChefData,
@@ -19,10 +25,12 @@ import {
 } from '../types/masterchef'
 import { notEmpty } from '../utils/is'
 import Decimal from 'decimal.js'
-import { d } from '../utils/number'
+import { d, YEAR_S } from '../utils/number'
 import { composeType } from '../utils'
+import { CoinPair } from './SwapModule'
+import { SwapPoolResource } from '../main'
 
-export type allPoolInfoList = {
+export type AllPoolInfoList = {
   coinType: AptosResourceType
   poolInfo: MasterChefPoolInfo
 }
@@ -90,7 +98,7 @@ export class MasterChefModule implements IModule {
     return resource.data
   }
 
-  async getAllPoolInfo(): Promise<allPoolInfoList[]> {
+  async getAllPoolInfo(): Promise<AllPoolInfoList[]> {
     const { modules } = this.sdk.networkOptions
     const resources = await this.sdk.resources.fetchAccountResources<MasterChefPoolInfo>(
       modules.MasterChefResourceAccountAddress,
@@ -101,6 +109,7 @@ export class MasterChefModule implements IModule {
     const lpCoinTypePrefix = composeMasterChefPoolInfoPrefix(modules.MasterChefScripts)
     const regexStr = `^${lpCoinTypePrefix}<(.+)>$`
     const filteredResource = resources.map(resource => {
+      if (!resource.type.includes(lpCoinTypePrefix)) return null
       const regex = new RegExp(regexStr, 'g')
       const regexResult = regex.exec(resource.type)
       if (!regexResult) return null
@@ -136,23 +145,14 @@ export class MasterChefModule implements IModule {
     const task2 = this.getPoolInfoByCoinType(coinType)
     const task3 = this.getMasterChefData()
 
-    const coinStoreType = composeCoinStore(modules.CoinStore, coinType)
-    const task4 = this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(
-      modules.MasterChefResourceAccountAddress,
-      coinStoreType,
-    )
-    const [resource, poolInfo, mcData, lpCoinStore] = await Promise.all([task1, task2, task3, task4])
+    const [resource, poolInfo, mcData] = await Promise.all([task1, task2, task3])
     if (!resource) {
       throw new Error(`resource (${userInfoType}) not found`)
     }
 
-    if (!lpCoinStore) {
-      throw new Error(`resource (${coinStoreType}) not found`)
-    }
     const userInfo = resource.data
-    const stakedTotal = lpCoinStore.data.coin.value
 
-    return meta2UserInfoReturn(poolInfo, userInfo, mcData, stakedTotal)
+    return meta2UserInfoReturn(poolInfo, userInfo, mcData)
   }
 
   async getUserInfoAll(userAddress: AptosResourceType): Promise<Map<string, UserInfoReturn>> {
@@ -169,58 +169,80 @@ export class MasterChefModule implements IModule {
     )
     // MasterChefData
     const task3 = this.getMasterChefData()
-    // stakedLP
-    const task4 = this.sdk.resources.fetchAccountResources<AptosCoinStoreResource>(
-      modules.MasterChefResourceAccountAddress,
-    )
     // await all
-    const [userInfos, poolInfos, mcData, lpCoinStore] = await Promise.all([task1, task2, task3, task4])
-    if (!userInfos || !poolInfos || !lpCoinStore) {
+    const [userInfos, poolInfos, mcData] = await Promise.all([task1, task2, task3])
+    if (!userInfos || !poolInfos) {
       throw new Error('resources not found')
     }
     // coinType2poolInfo
     const coinType2poolInfo: Map<string, MasterChefPoolInfo> = new Map()
     {
-      const regexStr = `^${lpCoinTypePrefix}<(.+)>$`
       poolInfos.map(resource => {
-        const regex = new RegExp(regexStr, 'g')
-        const regexResult = regex.exec(resource.type)
-        if (!regexResult) return
-        coinType2poolInfo.set(regexResult[1], resource.data)
-      })
-    }
-    // coinType2StakedLP
-    const coinType2StakedLP: Map<string, string> = new Map()
-    {
-
-      const regexStr = `^${modules.CoinStore}<(.+)>$`
-      lpCoinStore.map(resource => {
-        const regex = new RegExp(regexStr, 'g')
-        const regexResult = regex.exec(resource.type)
-        if (!regexResult) return
-        coinType2StakedLP.set(regexResult[1], resource.data.coin.value)
+        if (!resource.type.includes(lpCoinTypePrefix)) return
+        const tmp = resource.type.substring(lpCoinTypePrefix.length)
+        const type = tmp.substring(1, tmp.length - 1)
+        coinType2poolInfo.set(type, resource.data)
       })
     }
     // coinType2userInfo
     const coinType2userInfo: Map<string, UserInfoReturn> = new Map()
     {
-      const regexStr = `^${userInfoTypePrefix}<(.+)>$`
       userInfos.map(resource => {
-        const regex = new RegExp(regexStr, 'g')
-        const regexResult = regex.exec(resource.type)
-        if (!regexResult) return
-        const coinType = regexResult[1]
+        if (!resource.type.includes(userInfoTypePrefix)) return
+        const tmp = resource.type.substring(userInfoTypePrefix.length)
+        const coinType = tmp.substring(1, tmp.length - 1)
         const userInfo = resource.data
         const poolInfo = coinType2poolInfo.get(coinType)
-        const stakedLP = coinType2StakedLP.get(coinType)
-        if (!poolInfo || !stakedLP) {
+        if (!poolInfo) {
           throw new Error('resources not found')
         }
-        const userInfoReturn = meta2UserInfoReturn(poolInfo, userInfo, mcData, stakedLP)
+        const userInfoReturn = meta2UserInfoReturn(poolInfo, userInfo, mcData)
         coinType2userInfo.set(coinType, userInfoReturn)
       })
     }
     return coinType2userInfo
+  }
+
+  async getFirstTwoPairStakingApr() : Promise<[Decimal, Decimal]> {
+    const { modules } = this.sdk.networkOptions
+    const mcData = await this.getMasterChefData()
+    const ani = modules.AniAddress
+    const pair: CoinPair = {
+      coinX: this.sdk.networkOptions.nativeCoin,
+      coinY: modules.AniAddress,
+    }
+    const lpCoin = composeLPCoin(modules.ResourceAccountAddress, pair.coinX, pair.coinY)
+    const coinInfoTask = this.sdk.resources.fetchAccountResource<AptosCoinInfoResource>(
+      modules.ResourceAccountAddress,
+      composeType(modules.CoinInfo, [lpCoin])
+    )
+    const swapPoolTask = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+      modules.ResourceAccountAddress,
+      composeLP(modules.Scripts, pair.coinX, pair.coinY),
+    )
+    const aniPoolInfoTask = this.getPoolInfoByCoinType(ani)
+    const lpCoinPoolInfoTask = this.getPoolInfoByCoinType(lpCoin)
+
+    const [coinInfoResponse, swapPoolResponse, aniPoolInfoResponse, lpCoinPoolInfoResponse] =
+      await Promise.all([coinInfoTask, swapPoolTask, aniPoolInfoTask, lpCoinPoolInfoTask])
+
+    if (!coinInfoResponse || !swapPoolResponse || !aniPoolInfoResponse || !lpCoinPoolInfoResponse) {
+      throw new Error('resource not found')
+    }
+    
+    const lpSupply = coinInfoResponse.data.supply.vec[0].integer.vec[0].value // lp total supply
+    const stakedLPCoin = lpCoinPoolInfoResponse.coin_reserve.value  // staked LP Coin amount
+    const stakedANI = aniPoolInfoResponse.coin_reserve.value  // staked ANI amount
+    // staked lpCoin value equals to ANI amount value
+    const lpCoinValue2ANI = d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)).mul(2)
+
+    const interestANI1 = d(mcData.per_second_ANI).mul(d(aniPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
+    const aprANI = interestANI1.add(stakedANI).div(stakedANI)
+
+    const interestANI2 = d(mcData.per_second_ANI).mul(d(lpCoinPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
+    const lpCoinANI = interestANI2.add(lpCoinValue2ANI).div(lpCoinValue2ANI)
+
+    return [aprANI, lpCoinANI]
   }
 
   // deposit/withdraw LPCoin payload
@@ -266,15 +288,15 @@ function aptosTypeInfo2AptosResourceType(params: AptosTypeInfo): AptosResourceTy
   return `${params.account_address}::${hexToString(params.module_name)}::${hexToString(params.struct_name)}`
 }
 
-function meta2UserInfoReturn(poolInfo: MasterChefPoolInfo, userInfo: MasterChefUserInfo, mcData: MasterChefData, stakedTotal: string): UserInfoReturn {
+function meta2UserInfoReturn(poolInfo: MasterChefPoolInfo, userInfo: MasterChefUserInfo, mcData: MasterChefData): UserInfoReturn {
+  const stakedTotal = poolInfo.coin_reserve.value
   // calculate pending ANI
   const currentTimestamp = Math.floor(Date.now() / 1000)
-  // let multipler = get_multiplier(pool.last_reward_timestamp, get_current_timestamp(), mc_data.bonus_multiplier);
-  const multipler = d(mcData.bonus_multiplier).mul(d(currentTimestamp).sub(d(poolInfo.last_reward_timestamp)))
+  // let multipler = get_multiplier(pool.last_reward_timestamp, get_current_timestamp());
+  const multipler = d(currentTimestamp).sub(d(poolInfo.last_reward_timestamp))
   // let reward_ANI = multipler * mc_data.per_second_ANI * (pool.alloc_point as u128) / (mc_data.total_alloc_point as u128) * ((100 - mc_data.dao_percent) as u128) / 100u128;
-  // FIXME @zzzkky devnet and testnet use different name for dao_percent / dev_percent
-  const rewardAni = multipler.mul(mcData.per_second_ANI).mul(d(poolInfo.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent ? mcData.dao_percent : mcData.dev_percent)).div(d(100))
-  // pool.acc_ANI_per_share = pool.acc_ANI_per_share + reward_ANI * ACC_ANI_PRECISION / (lp_supply as u128);
+  const rewardAni = multipler.mul(mcData.per_second_ANI).mul(d(poolInfo.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100))
+  // pool.acc_ANI_per_share = pool.acc_ANI_per_share + reward_ANI * ACC_ANI_PRECISION / (staked_total as u128);
   const accAniPerShare = d(poolInfo.acc_ANI_per_share).add(rewardAni.mul(d(ACC_ANI_PRECISION)).div(d(stakedTotal)))
   // let pending = (user_info.amount as u128) * pool.acc_ANI_per_share / ACC_ANI_PRECISION - user_info.reward_debt;
   const pendingAni = d(userInfo.amount).mul(accAniPerShare).div(d(ACC_ANI_PRECISION)).sub(d(userInfo.reward_debt))
