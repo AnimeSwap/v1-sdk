@@ -9,9 +9,12 @@ import {
   composeMasterChefUserInfoPrefix,
   composeLPCoin,
   composeLP,
+  composeCoinStore,
+  composeANIRegister,
 } from '../utils/contractComposeType'
 import {
   AptosCoinInfoResource,
+  AptosCoinStoreResource,
   AptosResourceType,
   AptosTypeInfo,
   Payload,
@@ -30,7 +33,7 @@ import { composeType } from '../utils'
 import { CoinPair } from './SwapModule'
 import { SwapPoolResource } from '../main'
 
-export type AllPoolInfoList = {
+export type PoolInfReturn = {
   coinType: AptosResourceType
   poolInfo: MasterChefPoolInfo
 }
@@ -69,7 +72,11 @@ export class MasterChefModule implements IModule {
     this._sdk = sdk
   }
 
-  async getLPInfoResources(): Promise<AptosResourceType[]> {
+  /**
+   * Get all staked LP list
+   * @returns coinType list
+   */
+  async getLPInfoResources(): Promise<Array<AptosResourceType>> {
     const { modules } = this.sdk.networkOptions
     const lpList = composeMasterChefLPList(modules.MasterChefScripts)
     const resource = await this.sdk.resources.fetchAccountResource<MasterChefLPInfo>(
@@ -85,6 +92,11 @@ export class MasterChefModule implements IModule {
     })
   }
 
+  /**
+   * Get pool info by coinType
+   * @param coinType coinType
+   * @returns MasterChefPoolInfo
+   */
   async getPoolInfoByCoinType(coinType: AptosResourceType): Promise<MasterChefPoolInfo> {
     const { modules } = this.sdk.networkOptions
     const poolInfoType = composeMasterChefPoolInfo(modules.MasterChefScripts, coinType)
@@ -98,7 +110,11 @@ export class MasterChefModule implements IModule {
     return resource.data
   }
 
-  async getAllPoolInfo(): Promise<AllPoolInfoList[]> {
+  /**
+   * Get all Pool info list
+   * @returns PoolInfReturn list
+   */
+  async getAllPoolInfo(): Promise<Array<PoolInfReturn>> {
     const { modules } = this.sdk.networkOptions
     const resources = await this.sdk.resources.fetchAccountResources<MasterChefPoolInfo>(
       modules.MasterChefResourceAccountAddress,
@@ -121,6 +137,10 @@ export class MasterChefModule implements IModule {
     return filteredResource
   }
 
+  /**
+   * Get MasterChefData resource.
+   * @returns MasterChefData
+   */
   async getMasterChefData(): Promise<MasterChefData> {
     const { modules } = this.sdk.networkOptions
     const dataType = composeMasterChefData(modules.MasterChefScripts)
@@ -134,6 +154,12 @@ export class MasterChefModule implements IModule {
     return resource.data
   }
 
+  /**
+   * Return the staking coin info for a given address
+   * @param userAddress address
+   * @param coinType coinType, including `ANI` or `LPCoin<X, Y>`
+   * @returns UserInfoReturn, {stakingAmount, pendingANI}
+   */
   async getUserInfoByCoinType(userAddress: AptosResourceType, coinType: AptosResourceType): Promise<UserInfoReturn> {
     const { modules } = this.sdk.networkOptions
     const userInfoType = composeMasterChefUserInfo(modules.MasterChefScripts, coinType)
@@ -155,6 +181,11 @@ export class MasterChefModule implements IModule {
     return meta2UserInfoReturn(poolInfo, userInfo, mcData)
   }
 
+  /**
+   * Return all the staking coin infos for a given address
+   * @param userAddress address
+   * @returns a map, contains: LPCoin -> {stakingAmount, pendingANI}
+   */
   async getUserInfoAll(userAddress: AptosResourceType): Promise<Map<string, UserInfoReturn>> {
     const { modules } = this.sdk.networkOptions
     // UserInfo
@@ -203,6 +234,11 @@ export class MasterChefModule implements IModule {
     return coinType2userInfo
   }
 
+  /**
+   * Adhoc method
+   * Return staking apr of `ANI` and `LPCoin<APT, ANI>`
+   * @returns 
+   */
   async getFirstTwoPairStakingApr() : Promise<[Decimal, Decimal]> {
     const { modules } = this.sdk.networkOptions
     const mcData = await this.getMasterChefData()
@@ -245,7 +281,40 @@ export class MasterChefModule implements IModule {
     return [aprANI, lpCoinANI]
   }
 
-  // deposit/withdraw LPCoin payload
+  /**
+   * Check if the given address is registered ANI
+   * @param address address to check
+   * @returns bool
+   */
+  async checkRegisteredANI(address: AptosResourceType): Promise<boolean> {
+    const { modules } = this.sdk.networkOptions
+    const coinStoreLP = composeCoinStore(modules.CoinStore, modules.AniAddress)
+    try {
+      const lpCoinStore = await this.sdk.resources.fetchAccountResource<AptosCoinStoreResource>(address, coinStoreLP)
+      if (!lpCoinStore) return false
+      return true
+    } catch (e) {
+      return false
+    }
+  }
+
+  // Register ANI payload
+  registerANIPayload(): Payload {
+    const functionName = composeANIRegister(this.sdk.networkOptions.modules.AniAddress)
+
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      type_arguments: [],
+      arguments: [],
+    }
+  }
+
+  /**
+   * Deposit/withdraw LPCoin payload
+   * @param param0 
+   * @returns 
+   */
   stakeLPCoinPayload({
     amount,
     coinType,
@@ -266,7 +335,12 @@ export class MasterChefModule implements IModule {
     }
   }
 
-  // enter_staking/leave_staking ANI payload
+  /**
+   * Enter_staking/leave_staking ANI payload
+   * Equal to Deposit/withdraw method with type args `ANI`
+   * @param param0 
+   * @returns 
+   */
   stakeANIPayload({
     amount,
     method,
