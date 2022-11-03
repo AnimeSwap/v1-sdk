@@ -2,6 +2,7 @@ import { AptosClient } from 'aptos'
 import { MiscModule } from './modules/MiscModule'
 import { SwapModule } from './modules/SwapModule'
 import { RouteModule } from './modules/RouteModule'
+import { RouteV2Module } from './modules/RouteV2Module'
 import { MasterChefModule } from './modules/MasterChefModule'
 import { ResourcesModule } from './modules/ResourcesModule'
 import { AptosResourceType } from './types/aptos'
@@ -37,6 +38,7 @@ export class SDK {
   protected _client: AptosClient
   protected _swap: SwapModule
   protected _route: RouteModule
+  protected _routeV2: RouteV2Module
   protected _masterchef: MasterChefModule
   protected _misc: MiscModule
   protected _resources: ResourcesModule
@@ -48,6 +50,10 @@ export class SDK {
 
   get route() {
     return this._route
+  }
+
+  get routeV2() {
+    return this._routeV2
   }
 
   get MasterChef() {
@@ -139,6 +145,7 @@ export class SDK {
     this._client = new AptosClient(options.nodeUrl)
     this._swap = new SwapModule(this)
     this._route = new RouteModule(this)
+    this._routeV2 = new RouteV2Module(this)
     this._masterchef = new MasterChefModule(this)
     this._misc = new MiscModule(this)
     this._resources = new ResourcesModule(this)

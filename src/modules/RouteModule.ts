@@ -331,7 +331,7 @@ export class RouteModule implements IModule {
   }
 }
 
-function sortedInsert<T>(items: T[], add: T, maxSize: number, comparator: (a: T, b: T) => number) {
+export function sortedInsert<T>(items: T[], add: T, maxSize: number, comparator: (a: T, b: T) => number) {
   let index
   for (index = 0; index < items.length; index++) {
     const comp = comparator(items[index], add)
@@ -347,7 +347,7 @@ function sortedInsert<T>(items: T[], add: T, maxSize: number, comparator: (a: T,
   }
 }
 
-function tradeComparator(trade1: Trade, trade2: Trade): number {
+export function tradeComparator(trade1: Trade, trade2: Trade): number {
   const trade1In = d(trade1.amountList[0])
   const trade2In = d(trade2.amountList[0])
   const trade1Out = d(trade1.amountList[trade1.amountList.length - 1])
@@ -370,7 +370,7 @@ function tradeComparator(trade1: Trade, trade2: Trade): number {
   }
 }
 
-function getCoinTypeList(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[]): AptosResourceType[] {
+export function getCoinTypeList(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[]): AptosResourceType[] {
   const coinTypeList = [coinInType]
   let currentCoinType = coinInType
   for (let i = 0; i < coinPairList.length; i++) {
@@ -388,7 +388,7 @@ function getCoinTypeList(coinInType: AptosResourceType, coinPairList: LiquidityP
 }
 
 // calculated as: abs(realAmountOut - noImpactAmountOut) / noImpactAmountOut
-function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: Decimal[], fee: Decimal): Decimal {
+export function getPriceImpact(coinInType: AptosResourceType, coinPairList: LiquidityPoolResource[], amountList: Decimal[], fee: Decimal): Decimal {
   const realAmountOut = amountList[amountList.length - 1]
   let noImpactAmountOut = amountList[0].mul(d(10000).sub(fee)).div(10000)
   let currentCoinType = coinInType
