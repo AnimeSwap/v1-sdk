@@ -46,6 +46,22 @@ describe('Masterchef Module', () => {
     expect(1).toBe(1)
   })
 
+  test('checkRegisteredANI true', async () => {
+    const output = await sdk.MasterChef.checkRegisteredANI(sdk.networkOptions.modules.MasterChefDeployerAddress)
+    expect(output).toBe(true)
+  })
+
+  test('checkRegisteredANI false', async () => {
+    const output = await sdk.MasterChef.checkRegisteredANI(sdk.networkOptions.modules.DeployerAddress)
+    expect(output).toBe(false)
+  })
+
+  test('registerANIPayload', async () => {
+    const output = sdk.MasterChef.registerANIPayload()
+    console.log(output)
+    expect(1).toBe(1)
+  })
+
   test('stakeLPCoinPayload', async () => {
     const output = sdk.MasterChef.stakeLPCoinPayload({
       amount: '100000000',

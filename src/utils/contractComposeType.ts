@@ -1,4 +1,4 @@
-import { composeType } from './contract'
+import { composeType, extractAddressFromType } from './contract'
 
 const LPCoinModule = 'LPCoinV1'
 const LPCoinType = 'LPCoin'
@@ -10,6 +10,8 @@ const AnimeMasterChefLPInfo = 'LPInfo'
 const AnimeMasterChefPoolInfo = 'PoolInfo'
 const AnimeMasterChefUserInfo = 'UserInfo'
 const AnimeMasterChefData = 'MasterChefData'
+const ANIModuleName = 'AnimeCoin'
+const ANIRegister = 'register_ANI'
 
 export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
   return composeType(address, LPCoinModule, LPCoinType, [coin_x, coin_y])
@@ -65,4 +67,8 @@ export function composeMasterChefUserInfo(mcScript: string, coinType: string) {
 
 export function composeMasterChefUserInfoPrefix(mcScript: string) {
   return composeType(mcScript, AnimeMasterChefUserInfo)
+}
+
+export function composeANIRegister(addressANI: string) {
+  return composeType(extractAddressFromType(addressANI), ANIModuleName, ANIRegister)
 }
