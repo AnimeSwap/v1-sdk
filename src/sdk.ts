@@ -2,6 +2,7 @@ import { AptosClient } from 'aptos'
 import { MiscModule } from './modules/MiscModule'
 import { SwapModule } from './modules/SwapModule'
 import { RouteModule } from './modules/RouteModule'
+import { RouteV2Module } from './modules/RouteV2Module'
 import { MasterChefModule } from './modules/MasterChefModule'
 import { ResourcesModule } from './modules/ResourcesModule'
 import { AptosResourceType } from './types/aptos'
@@ -37,6 +38,7 @@ export class SDK {
   protected _client: AptosClient
   protected _swap: SwapModule
   protected _route: RouteModule
+  protected _routeV2: RouteV2Module
   protected _masterchef: MasterChefModule
   protected _misc: MiscModule
   protected _resources: ResourcesModule
@@ -48,6 +50,10 @@ export class SDK {
 
   get route() {
     return this._route
+  }
+
+  get routeV2() {
+    return this._routeV2
   }
 
   get MasterChef() {
@@ -101,10 +107,10 @@ export class SDK {
         CoinStore: '0x1::coin::CoinStore',
         DeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
         ResourceAccountAddress: '0x796900ebe1a1a54ff9e932f19c548f5c1af5c6e7d34965857ac2f7b1d1ab2cbf',
-        AniAddress: '0xb8d9d622a4b32e47371a91bce42719f0a1eeb18c7bec78155b4231854ea5f538::AnimeCoin::ANI',
-        MasterChefScripts: '0xb8d9d622a4b32e47371a91bce42719f0a1eeb18c7bec78155b4231854ea5f538::AnimeMasterChefV1',
-        MasterChefDeployerAddress: '0xb8d9d622a4b32e47371a91bce42719f0a1eeb18c7bec78155b4231854ea5f538',
-        MasterChefResourceAccountAddress: '0x3a78d042271e14fba6ff9e852878a0f9326fc1cd5788af6d9c0853756f0e8dfa',
+        AniAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI',
+        MasterChefScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeMasterChefV1',
+        MasterChefDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
+        MasterChefResourceAccountAddress: '0x8615f5671592532631e56c76ca09d332fae1cd03d463bc379eec1007973966ef',
       },
       misc: {
         AirdropDeployer: '0xf713bbb607b171ef26dd141050b854a8a7270b5a555a0a202abd98e3e5ded9da',
@@ -139,6 +145,7 @@ export class SDK {
     this._client = new AptosClient(options.nodeUrl)
     this._swap = new SwapModule(this)
     this._route = new RouteModule(this)
+    this._routeV2 = new RouteV2Module(this)
     this._masterchef = new MasterChefModule(this)
     this._misc = new MiscModule(this)
     this._resources = new ResourcesModule(this)

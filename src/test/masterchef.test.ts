@@ -52,7 +52,7 @@ describe('Masterchef Module', () => {
   })
 
   test('checkRegisteredANI false', async () => {
-    const output = await sdk.MasterChef.checkRegisteredANI(sdk.networkOptions.modules.DeployerAddress)
+    const output = await sdk.MasterChef.checkRegisteredANI(sdk.networkOptions.modules.ResourceAccountAddress)
     expect(output).toBe(false)
   })
 
