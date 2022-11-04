@@ -6,6 +6,7 @@ import {
 import { d, getRandomInt } from '../utils/number'
 import {
   CoinPair,
+  getCoinInWithFees,
   getCoinOutWithFees,
   LiquidityPoolResource,
 } from './SwapModule'
@@ -15,6 +16,7 @@ import { SwapPoolResource } from '../main'
 import { getCoinTypeList, getPriceImpact, sortedInsert, SwapCoinParams, Trade, tradeComparator } from './RouteModule'
 
 const DEFAULT_ROUTE = 5
+const U64MAX: Decimal = d('18446744073709551615') // 2^64-1
 const fee = d(30)
 type Route = Array<CoinPair>
 type CoinPair2LiquidityPoolResource = { [key: AptosResourceType]: LiquidityPoolResource } // key of coinType X,Y is: `X, Y`
@@ -198,6 +200,7 @@ export class RouteV2Module implements IModule {
       let currentAmountIn = amountInOrigin
       const coinPairList: Array<LiquidityPoolResource> = []
       const amountList: Array<Decimal> = [amountInOrigin]
+      let flag = true
       // start route from begin
       for (let i = 0; i < route.length; i++) {
         const pair = route[i]
@@ -210,13 +213,75 @@ export class RouteV2Module implements IModule {
           ? [d(lpResource.coinXReserve), d(lpResource.coinYReserve)]
           : [d(lpResource.coinYReserve), d(lpResource.coinXReserve)]
         const coinOut = getCoinOutWithFees(currentAmountIn, reserveIn, reserveOut, fee)
-        if (coinOut.lt(0) || coinOut.gt(reserveOut)) break
+        if (coinOut.lt(0) || coinOut.gt(reserveOut)) {
+          flag = false
+          break
+        }
         // prepare for next loop
         currentCoinType = coinTypeOut
         currentAmountIn = coinOut
         coinPairList.push(lpResource)
         amountList.push(currentAmountIn)
       }
+      if (!flag) continue
+      // route to the end
+      const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
+      const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList, fee)
+      const newTrade: Trade = {
+        coinPairList,
+        amountList,
+        coinTypeList,
+        priceImpact,
+      }
+      sortedInsert(
+        bestTrades,
+        newTrade,
+        DEFAULT_ROUTE,
+        tradeComparator,
+      )
+    }
+    return bestTrades
+  }
+
+  bestTradeExactOut(
+    candidateRouteList: Array<Route>,
+    coinPair2LiquidityPoolResource: CoinPair2LiquidityPoolResource,
+    coinTypeInOrigin: AptosResourceType,
+    coinTypeOutOrigin: AptosResourceType,
+    amountOutOrigin: Decimal,
+  ): Array<Trade> {
+    const bestTrades: Array<Trade> = []
+    for (let index = 0; index < candidateRouteList.length; index++) {
+      const route = candidateRouteList[index]
+      // init
+      let currentCoinType = coinTypeOutOrigin
+      let currentAmountOut = amountOutOrigin
+      let coinPairList: Array<LiquidityPoolResource> = []
+      let amountList: Array<Decimal> = [amountOutOrigin]
+      let flag = true
+      // start route from begin
+      for (let i = route.length - 1; i >= 0; i--) {
+        const pair = route[i]
+        const lpResource = coinPair2LiquidityPoolResource[coinPair2Key(pair)]
+        if (!lpResource) throw('Internal error')
+        const coinTypeIn = (pair.coinX == currentCoinType)
+          ? pair.coinY
+          : pair.coinX
+        const [reserveIn, reserveOut] = (pair.coinX == currentCoinType)
+          ? [d(lpResource.coinYReserve), d(lpResource.coinXReserve)]
+          : [d(lpResource.coinXReserve), d(lpResource.coinYReserve)]
+        const coinIn = getCoinInWithFees(currentAmountOut, reserveOut, reserveIn, fee)
+        if (coinIn.lt(0) || coinIn.gt(U64MAX)) {
+          flag = false
+          break
+        }
+        // prepare for next loop
+        currentCoinType = coinTypeIn
+        currentAmountOut = coinIn
+        coinPairList = [lpResource, ...coinPairList]
+        amountList = [currentAmountOut, ...amountList]
+      }
+      if (!flag) continue
       // route to the end
       const coinTypeList = getCoinTypeList(coinTypeInOrigin, coinPairList)
       const priceImpact = getPriceImpact(coinTypeInOrigin, coinPairList, amountList, fee)
@@ -249,6 +314,25 @@ export class RouteV2Module implements IModule {
       candidateRouteList,
       allCandidateRouteResources,
       fromCoin,
+      amount
+    )
+    return bestTrades
+  }
+
+  async getRouteSwapCoinForExactCoin({
+    fromCoin,
+    toCoin,
+    amount,
+  }: SwapCoinParams): Promise<Array<Trade>> {
+    amount = d(amount)
+    const allRoutes = await this.getAllRoutes(fromCoin, toCoin)
+    const candidateRouteList = this.getCandidateRoutes(allRoutes)
+    const allCandidateRouteResources = await this.getAllCandidateRouteResources(candidateRouteList)
+    const bestTrades = this.bestTradeExactOut(
+      candidateRouteList,
+      allCandidateRouteResources,
+      fromCoin,
+      toCoin,
       amount
     )
     return bestTrades
