@@ -59,6 +59,14 @@ export type StakeANIPayload = {
   method: 'enter_staking' | 'leave_staking'
 }
 
+export type StakedLPInfo = {
+  apr: Decimal      // staked apr
+  lpAmount: Decimal // staked amount
+  lp2AniAmount: Decimal // staked LP to ANI amount
+  coinX?: Decimal   // staked coinX amount
+  coinY?: Decimal   // staked coinY amount
+}
+
 const ACC_ANI_PRECISION = 1e12
 
 export class MasterChefModule implements IModule {
@@ -236,10 +244,10 @@ export class MasterChefModule implements IModule {
 
   /**
    * Adhoc method
-   * Return staking apr of `ANI` and `LPCoin<APT, ANI>`
+   * Return StakedLPInfo of `ANI` and `LPCoin<APT, ANI>`
    * @returns 
    */
-  async getFirstTwoPairStakingApr() : Promise<[Decimal, Decimal]> {
+  async getFirstTwoPairStakedLPInfo() : Promise<[StakedLPInfo, StakedLPInfo]> {
     const { modules } = this.sdk.networkOptions
     const mcData = await this.getMasterChefData()
     const ani = modules.AniAddress
@@ -276,9 +284,23 @@ export class MasterChefModule implements IModule {
     const aprANI = interestANI1.add(stakedANI).div(stakedANI)
 
     const interestANI2 = d(mcData.per_second_ANI).mul(d(lpCoinPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
-    const lpCoinANI = interestANI2.add(lpCoinValue2ANI).div(lpCoinValue2ANI)
+    const aprLPCoin = interestANI2.add(lpCoinValue2ANI).div(lpCoinValue2ANI)
 
-    return [aprANI, lpCoinANI]
+    const stakedAniReturn: StakedLPInfo = {
+      apr: aprANI,
+      lpAmount: d(stakedANI),
+      lp2AniAmount: d(stakedANI),
+    }
+
+    const stakedLPCoinReturn: StakedLPInfo = {
+      apr: aprLPCoin,
+      lpAmount: d(stakedLPCoin),
+      lp2AniAmount: d(lpCoinValue2ANI),
+      coinX: d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_x_reserve.value)),
+      coinY: d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)),
+    }
+
+    return [stakedAniReturn, stakedLPCoinReturn]
   }
 
   /**
