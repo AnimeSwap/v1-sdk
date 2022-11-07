@@ -40,8 +40,8 @@ describe('Masterchef Module', () => {
     expect(1).toBe(1)
   })
 
-  test('getFirstTwoPairStakingApr', async () => {
-    const output = await sdk.MasterChef.getFirstTwoPairStakingApr()
+  test('getFirstTwoPairStakedLPInfo', async () => {
+    const output = await sdk.MasterChef.getFirstTwoPairStakedLPInfo()
     console.log(output)
     expect(1).toBe(1)
   })
