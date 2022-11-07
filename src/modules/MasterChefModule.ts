@@ -275,10 +275,10 @@ export class MasterChefModule implements IModule {
     }
     
     const lpSupply = coinInfoResponse.data.supply.vec[0].integer.vec[0].value // lp total supply
-    const StakedLPInfoCoin = lpCoinPoolInfoResponse.coin_reserve.value  // staked LP Coin amount
+    const stakedLPCoin = lpCoinPoolInfoResponse.coin_reserve.value  // staked LP Coin amount
     const stakedANI = aniPoolInfoResponse.coin_reserve.value  // staked ANI amount
     // staked lpCoin value equals to ANI amount value
-    const lpCoinValue2ANI = d(StakedLPInfoCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)).mul(2)
+    const lpCoinValue2ANI = d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)).mul(2)
 
     const interestANI1 = d(mcData.per_second_ANI).mul(d(aniPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
     const aprANI = interestANI1.add(stakedANI).div(stakedANI)
@@ -292,15 +292,15 @@ export class MasterChefModule implements IModule {
       lp2AniAmount: d(stakedANI),
     }
 
-    const StakedLPInfoCoinReturn: StakedLPInfo = {
+    const stakedLPCoinReturn: StakedLPInfo = {
       apr: aprLPCoin,
-      lpAmount: d(StakedLPInfoCoin),
+      lpAmount: d(stakedLPCoin),
       lp2AniAmount: d(lpCoinValue2ANI),
-      coinX: d(StakedLPInfoCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_x_reserve.value)),
-      coinY: d(StakedLPInfoCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)),
+      coinX: d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_x_reserve.value)),
+      coinY: d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)),
     }
 
-    return [stakedAniReturn, StakedLPInfoCoinReturn]
+    return [stakedAniReturn, stakedLPCoinReturn]
   }
 
   /**
