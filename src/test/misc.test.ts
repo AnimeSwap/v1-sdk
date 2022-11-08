@@ -3,7 +3,7 @@ import SDK, { NetworkType } from '../main'
 const address = '0x8aacfa7a452ddea2c1953e59e52be5c7171f7281ba60ea52c3d5e5950000'
 
 describe('Misc Module', () => {
-  const sdk = new SDK('https://fullnode.devnet.aptoslabs.com', NetworkType.Devnet)
+  const sdk = new SDK('https://fullnode.testnet.aptoslabs.com', NetworkType.Testnet)
 
   test('checkUserAirdropBalance', async () => {
     const output = await sdk.Misc.checkUserAirdropBalance(address)
