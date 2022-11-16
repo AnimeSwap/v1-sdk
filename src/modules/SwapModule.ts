@@ -599,7 +599,11 @@ export class SwapModule implements IModule {
       lpType,
       ledgerVersion,
     )
-    const task2 = this.getCoinInfo(lpCoin)
+    const task2 = this.sdk.resources.fetchAccountResource<AptosCoinInfoResource>(
+      extractAddressFromType(lpCoin),
+      composeType(modules.CoinInfo, [lpCoin]),
+      ledgerVersion
+    )
 
     const [lp, lpCoinInfo] = await Promise.all([task1, task2])
     if (!lp) {
