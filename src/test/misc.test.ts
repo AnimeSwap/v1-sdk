@@ -21,4 +21,17 @@ describe('Misc Module', () => {
     console.log(output)
     expect(1).toBe(1)
   })
+
+  // test('calculateAutoAniStakedAmount', async () => {
+  //   const addressTmp = '0xf920ce46ae9befa1639ef751053ce5f3de5e526df6d598ef384880faaf6eac27'
+  //   const output = sdk.Misc.calculateAutoAniStakedAmount(addressTmp)
+  //   console.log(output)
+  //   expect(1).toBe(1)
+  // })
+
+  // test('calculateAutoAniHarvestCallFee', async () => {
+  //   const output = await sdk.Misc.calculateAutoAniHarvestCallFee()
+  //   console.log(output)
+  //   expect(1).toBe(1)
+  // })
 })
