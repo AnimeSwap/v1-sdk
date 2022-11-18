@@ -281,10 +281,10 @@ export class MasterChefModule implements IModule {
     const lpCoinValue2ANI = d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)).mul(2)
 
     const interestANI1 = d(mcData.per_second_ANI).mul(d(aniPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
-    const aprANI = interestANI1.add(stakedANI).div(stakedANI)
+    const aprANI = interestANI1.div(stakedANI)
 
     const interestANI2 = d(mcData.per_second_ANI).mul(d(lpCoinPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
-    const aprLPCoin = interestANI2.add(lpCoinValue2ANI).div(lpCoinValue2ANI)
+    const aprLPCoin = interestANI2.div(lpCoinValue2ANI)
 
     const stakedAniReturn: StakedLPInfo = {
       apr: aprANI,

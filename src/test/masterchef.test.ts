@@ -3,7 +3,7 @@ const coinType = '0x796900ebe1a1a54ff9e932f19c548f5c1af5c6e7d34965857ac2f7b1d1ab
 const userAddress = '0x2c5ebdd44fd5eac6382e53319a8fae35b87c3b25903c8b44ed35f9db63746538'
 
 describe('Masterchef Module', () => {
-  const sdk = new SDK('https://fullnode.testnet.aptoslabs.com', NetworkType.Testnet)
+  const sdk = new SDK('https://fullnode.mainnet.aptoslabs.com', NetworkType.Mainnet)
 
   test('getLPInfoResources', async () => {
     const output = await sdk.MasterChef.getLPInfoResources()
