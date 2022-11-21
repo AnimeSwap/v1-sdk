@@ -24,6 +24,7 @@ export type AutoAniStakedReturn = {
   amount: Decimal // current amount. Deposit value + interest
   afterPenaltyAmount: Decimal // after penalty amount. equalt to `amount * (1 - penalty)`
   withdrawFeeFreeTimestamp: Decimal  // after this timestamp, no withdraw_fee penalty
+  shares: Decimal // for withdraw part. amount = k * shares
   // lastUserActionAni is an approximation, do not show it
   // interest = amount - lastUserActionAni, show this value
 }
@@ -85,9 +86,9 @@ export class MiscModule implements IModule {
    * @returns AutoAniStakedReturn
    */
   async calculateAutoAniStakedAmount(address: AptosResourceType): Promise<AutoAniStakedReturn> {
-    const autoAniUserInfo = await this.getAutoANIUserInfo(address)
-    const autoAniData = await this.getAutoANIData()
-    const balanceOf = await this.autoAniBalanceOf()
+    const autoAniUserInfo = await this._getAutoANIUserInfo(address)
+    const autoAniData = await this._getAutoANIData()
+    const balanceOf = await this._autoAniBalanceOf()
     const amount = d(autoAniUserInfo.shares).mul(balanceOf).div(autoAniData.total_shares).floor()
     const afterPenaltyAmount = amount.mul(d(10000).sub(autoAniData.withdraw_fee)).div(10000).ceil() // this method use ceil()
     const withdrawFeeFreeTimestamp = d(autoAniUserInfo.last_deposited_time).add(d(autoAniData.withdraw_fee_period))
@@ -96,6 +97,7 @@ export class MiscModule implements IModule {
       amount,
       afterPenaltyAmount,
       withdrawFeeFreeTimestamp,
+      shares: d(autoAniUserInfo.shares)
     }
   }
 
@@ -103,13 +105,13 @@ export class MiscModule implements IModule {
    * calculate harvest call_fee reward
    */
   async calculateAutoAniHarvestCallFee(): Promise<Decimal> {
-    const autoAniData = await this.getAutoANIData()
-    const available = await this.autoAniAvalableAfterLeaveStaking()
+    const autoAniData = await this._getAutoANIData()
+    const available = await this._autoAniAvalableAfterLeaveStaking()
     const callFee = available.mul(autoAniData.call_fee).div(10000).floor()
     return callFee
   }
 
-  async getAutoANIUserInfo(address: AptosResourceType): Promise<AutoAniUserInfo> {
+  async _getAutoANIUserInfo(address: AptosResourceType): Promise<AutoAniUserInfo> {
     const { misc } = this.sdk.networkOptions
     const userInfo = await this.sdk.resources.fetchAccountResource<AutoAniUserInfo>(
       address,
@@ -119,7 +121,7 @@ export class MiscModule implements IModule {
     return userInfo.data
   }
 
-  async getAutoANIData(): Promise<AutoAniData> {
+  async _getAutoANIData(): Promise<AutoAniData> {
     const { misc } = this.sdk.networkOptions
     const data = await this.sdk.resources.fetchAccountResource<AutoAniData>(
       misc.AutoAniResourceAccountAddress,
@@ -130,7 +132,7 @@ export class MiscModule implements IModule {
   }
 
   // equal to contract `balance_of()`
-  async autoAniBalanceOf() {
+  async _autoAniBalanceOf() {
     const { modules, misc } = this.sdk.networkOptions
     const userInfoReturn = await this.sdk.MasterChef.getUserInfoByCoinType(misc.AutoAniResourceAccountAddress, modules.AniAddress)
     const raBalance = await this.getBalance(misc.AutoAniResourceAccountAddress, modules.AniAddress)
@@ -138,16 +140,56 @@ export class MiscModule implements IModule {
   }
 
   // equal to contract `leave_staking()` then `available()`
-  async autoAniAvalableAfterLeaveStaking() {
+  async _autoAniAvalableAfterLeaveStaking() {
     const { modules, misc } = this.sdk.networkOptions
     const userInfoReturn = await this.sdk.MasterChef.getUserInfoByCoinType(misc.AutoAniResourceAccountAddress, modules.AniAddress)
     const raBalance = await this.getBalance(misc.AutoAniResourceAccountAddress, modules.AniAddress)
     return raBalance.add(userInfoReturn.pendingAni)
   }
 
-  // TODO deposit payload
-  // TODO withdraw_all payload
-  // TODO withdraw payload
+  autoAniDepositPayload(amount: Decimal | string): Payload {
+    const { misc } = this.sdk.networkOptions
+    const functionName = composeType(misc.AutoAniScripts, 'deposit')
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      type_arguments: [],
+      arguments: [amount.toString()],
+    }
+  }
+
+  autoAniWithdrawAllPayload(): Payload {
+    const { misc } = this.sdk.networkOptions
+    const functionName = composeType(misc.AutoAniScripts, 'withdraw_all')
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      type_arguments: [],
+      arguments: [],
+    }
+  }
+
+  autoAniWithdrawPayload(shares: Decimal | string): Payload {
+    const { misc } = this.sdk.networkOptions
+    const functionName = composeType(misc.AutoAniScripts, 'withdraw')
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      type_arguments: [],
+      arguments: [shares.toString()],
+    }
+  }
+
+  autoAniHarvestPayload(): Payload {
+    const { misc } = this.sdk.networkOptions
+    const functionName = composeType(misc.AutoAniScripts, 'harvest')
+    return {
+      type: 'entry_function_payload',
+      function: functionName,
+      type_arguments: [],
+      arguments: [],
+    }
+  }
 
   // ---------- common ----------
 
