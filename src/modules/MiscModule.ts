@@ -20,9 +20,12 @@ import {
 } from '../utils'
 
 export type AutoAniStakedReturn = {
-  amount: Decimal // full amount, including interest
+  lastUserActionAni: Decimal  // last user action ANI. Deposit value.
+  amount: Decimal // current amount. Deposit value + interest
   afterPenaltyAmount: Decimal // after penalty amount. equalt to `amount * (1 - penalty)`
   withdrawFeeFreeTimestamp: Decimal  // after this timestamp, no withdraw_fee penalty
+  // lastUserActionAni is an approximation, do not show it
+  // interest = amount - lastUserActionAni, show this value
 }
 
 export class MiscModule implements IModule {
@@ -85,10 +88,11 @@ export class MiscModule implements IModule {
     const autoAniUserInfo = await this.getAutoANIUserInfo(address)
     const autoAniData = await this.getAutoANIData()
     const balanceOf = await this.autoAniBalanceOf()
-    const amount = d(autoAniUserInfo.shares).mul(balanceOf).div(autoAniData.total_shares)
+    const amount = d(autoAniUserInfo.shares).mul(balanceOf).div(autoAniData.total_shares).floor()
     const afterPenaltyAmount = amount.mul(d(10000).sub(autoAniData.withdraw_fee)).div(10000).ceil() // this method use ceil()
     const withdrawFeeFreeTimestamp = d(autoAniUserInfo.last_deposited_time).add(d(autoAniData.withdraw_fee_period))
     return {
+      lastUserActionAni: d(autoAniUserInfo.last_user_action_ANI),
       amount,
       afterPenaltyAmount,
       withdrawFeeFreeTimestamp,
