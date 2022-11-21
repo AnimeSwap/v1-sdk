@@ -97,7 +97,7 @@ export class MiscModule implements IModule {
       amount,
       afterPenaltyAmount,
       withdrawFeeFreeTimestamp,
-      shares: d(autoAniUserInfo.shares)
+      shares: d(autoAniUserInfo.shares),
     }
   }
 
