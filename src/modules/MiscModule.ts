@@ -29,6 +29,10 @@ export type AutoAniStakedReturn = {
   // interest = amount - lastUserActionAni, show this value
 }
 
+export type StakedAutoAniInfo = {
+  amount: Decimal // total staked amount
+}
+
 export class MiscModule implements IModule {
   protected _sdk: SDK
 
@@ -98,6 +102,17 @@ export class MiscModule implements IModule {
       afterPenaltyAmount,
       withdrawFeeFreeTimestamp,
       shares: d(autoAniUserInfo.shares),
+    }
+  }
+
+  /**
+   * calculate staked auto ANI info
+   * @returns StakedAutoAniInfo
+   */
+  async calculateAutoAniInfo(): Promise<StakedAutoAniInfo> {
+    const balanceOf = await this._autoAniBalanceOf()
+    return {
+      amount: balanceOf,
     }
   }
 

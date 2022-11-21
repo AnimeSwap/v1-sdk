@@ -39,6 +39,12 @@ describe('Misc Module', () => {
   //   expect(1).toBe(1)
   // })
 
+  // test('calculateAutoAniInfo', async () => {
+  //   const output = await sdk.Misc.calculateAutoAniInfo()
+  //   console.log(output)
+  //   expect(1).toBe(1)
+  // })
+
   // test('autoAniDepositPayload', async () => {
   //   const payload = sdk.Misc.autoAniDepositPayload(1e8.toString())
   //   console.log(payload)
