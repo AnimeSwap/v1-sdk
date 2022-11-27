@@ -12,6 +12,8 @@ const AnimeMasterChefUserInfo = 'UserInfo'
 const AnimeMasterChefData = 'MasterChefData'
 const ANIModuleName = 'AnimeCoin'
 const ANIRegister = 'register_ANI'
+const AutoAniUserInfo = 'UserInfo'
+const AutoAniData = 'AutoANIData'
 
 export function composeLPCoin(address: string, coin_x: string, coin_y: string) {
   return composeType(address, LPCoinModule, LPCoinType, [coin_x, coin_y])
@@ -72,3 +74,12 @@ export function composeMasterChefUserInfoPrefix(mcScript: string) {
 export function composeANIRegister(addressANI: string) {
   return composeType(extractAddressFromType(addressANI), ANIModuleName, ANIRegister)
 }
+
+export function composeAutoAniUserInfo(aaScript: string) {
+  return composeType(aaScript, AutoAniUserInfo)
+}
+
+export function composeAutoAniData(aaScript: string) {
+  return composeType(aaScript, AutoAniData)
+}
+

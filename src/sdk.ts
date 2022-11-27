@@ -24,6 +24,9 @@ export type SdkOptions = {
     } & Record<string, AptosResourceType>
     misc: {
       AirdropDeployer: AptosResourceType
+      AutoAniScripts: AptosResourceType
+      AutoAniDeployerAddress: AptosResourceType
+      AutoAniResourceAccountAddress: AptosResourceType
     } & Record<string, AptosResourceType>
   }
 }
@@ -90,13 +93,16 @@ export class SDK {
         CoinStore: '0x1::coin::CoinStore',
         DeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
         ResourceAccountAddress: '0x796900ebe1a1a54ff9e932f19c548f5c1af5c6e7d34965857ac2f7b1d1ab2cbf',
-        AniAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI', // WIP
-        MasterChefScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeMasterChefV1', // WIP
-        MasterChefDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c', // WIP
-        MasterChefResourceAccountAddress: '0x8615f5671592532631e56c76ca09d332fae1cd03d463bc379eec1007973966ef', // WIP
+        AniAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI',
+        MasterChefScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeMasterChefV1',
+        MasterChefDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
+        MasterChefResourceAccountAddress: '0x8615f5671592532631e56c76ca09d332fae1cd03d463bc379eec1007973966ef',
       },
       misc: {
-        AirdropDeployer: '0xf713bbb607b171ef26dd141050b854a8a7270b5a555a0a202abd98e3e5ded9da', // WIP
+        AirdropDeployer: '0xf713bbb607b171ef26dd141050b854a8a7270b5a555a0a202abd98e3e5ded9da',
+        AutoAniScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AutoAni',
+        AutoAniDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
+        AutoAniResourceAccountAddress: '0x453989b1e41bb442c833314f6ffc8572e3670c1a40a6c8a6e52ea7c588c72fd7',
       },
     }
     const devnetOptions = {
@@ -114,6 +120,9 @@ export class SDK {
       },
       misc: {
         AirdropDeployer: '0xf713bbb607b171ef26dd141050b854a8a7270b5a555a0a202abd98e3e5ded9da',
+        AutoAniScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AutoAniT1',
+        AutoAniDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
+        AutoAniResourceAccountAddress: '0x453989b1e41bb442c833314f6ffc8572e3670c1a40a6c8a6e52ea7c588c72fd7',
       },
     }
     const testnetOptions = {
@@ -131,6 +140,9 @@ export class SDK {
       },
       misc: {
         AirdropDeployer: '0xf713bbb607b171ef26dd141050b854a8a7270b5a555a0a202abd98e3e5ded9da',
+        AutoAniScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AutoAnif1',
+        AutoAniDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
+        AutoAniResourceAccountAddress: '0x0ca8eead846cf02f0a395d3379903b62795358d955bad4b13dacb284ec094aa6',
       },
     }
     let networkOptions = mainnetOptions  // default network
