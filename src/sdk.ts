@@ -140,9 +140,9 @@ export class SDK {
       },
       misc: {
         AirdropDeployer: '0xf713bbb607b171ef26dd141050b854a8a7270b5a555a0a202abd98e3e5ded9da',
-        AutoAniScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AutoAni',
+        AutoAniScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AutoAnif1',
         AutoAniDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
-        AutoAniResourceAccountAddress: '0x453989b1e41bb442c833314f6ffc8572e3670c1a40a6c8a6e52ea7c588c72fd7',
+        AutoAniResourceAccountAddress: '0x0ca8eead846cf02f0a395d3379903b62795358d955bad4b13dacb284ec094aa6',
       },
     }
     let networkOptions = mainnetOptions  // default network
