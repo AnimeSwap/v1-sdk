@@ -95,7 +95,7 @@ export class MiscModule implements IModule {
     const balanceOf = await this._autoAniBalanceOf()
     const amount = d(autoAniUserInfo.shares).mul(balanceOf).div(autoAniData.total_shares).floor()
     const afterPenaltyAmount = amount.mul(d(10000).sub(autoAniData.withdraw_fee)).div(10000).ceil() // this method use ceil()
-    const withdrawFeeFreeTimestamp = d(autoAniUserInfo.last_deposited_time).add(d(autoAniData.withdraw_fee_period))
+    const withdrawFeeFreeTimestamp = d(autoAniUserInfo.last_user_action_time).add(d(autoAniData.withdraw_fee_period))
     return {
       lastUserActionAni: d(autoAniUserInfo.last_user_action_ANI),
       amount,
