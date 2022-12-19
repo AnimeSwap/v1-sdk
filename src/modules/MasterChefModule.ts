@@ -251,7 +251,7 @@ export class MasterChefModule implements IModule {
     const { modules } = this.sdk.networkOptions
     const mcData = await this.getMasterChefData()
     const ani = modules.AniAddress
-    const zUSDC = '0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC'
+    const zUSDC = this.sdk.networkOptions.coins.zUSDC
     // <APT, ANI>
     const pair: CoinPair = {
       coinX: this.sdk.networkOptions.nativeCoin,
