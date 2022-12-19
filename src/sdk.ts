@@ -28,6 +28,9 @@ export type SdkOptions = {
       AutoAniDeployerAddress: AptosResourceType
       AutoAniResourceAccountAddress: AptosResourceType
     } & Record<string, AptosResourceType>
+    coins: {
+      zUSDC: AptosResourceType
+    } & Record<string, AptosResourceType>
   }
 }
 
@@ -104,6 +107,9 @@ export class SDK {
         AutoAniDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
         AutoAniResourceAccountAddress: '0x453989b1e41bb442c833314f6ffc8572e3670c1a40a6c8a6e52ea7c588c72fd7',
       },
+      coins: {
+        zUSDC: '0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC',
+      },
     }
     const devnetOptions = {
       nativeCoin: '0x1::aptos_coin::AptosCoin',
@@ -124,6 +130,9 @@ export class SDK {
         AutoAniDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
         AutoAniResourceAccountAddress: '0x453989b1e41bb442c833314f6ffc8572e3670c1a40a6c8a6e52ea7c588c72fd7',
       },
+      coins: {
+        zUSDC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI',
+      },
     }
     const testnetOptions = {
       nativeCoin: '0x1::aptos_coin::AptosCoin',
@@ -143,6 +152,9 @@ export class SDK {
         AutoAniScripts: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AutoAnif2',
         AutoAniDeployerAddress: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c',
         AutoAniResourceAccountAddress: '0xdfee246b309af2e34e11c4f10119ac177185a6737ba05ad4377245d8164e669d',
+      },
+      coins: {
+        zUSDC: '0x16fe2df00ea7dde4a63409201f7f4e536bde7bb7335526a35d05111e68aa322c::AnimeCoin::ANI',  // dummy
       },
     }
     let networkOptions = mainnetOptions  // default network
