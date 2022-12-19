@@ -247,13 +247,15 @@ export class MasterChefModule implements IModule {
    * Return StakedLPInfo of `ANI` and `LPCoin<APT, ANI>`
    * @returns 
    */
-  async getFirstTwoPairStakedLPInfo() : Promise<[StakedLPInfo, StakedLPInfo]> {
+  async getFirstTwoPairStakedLPInfo() : Promise<Array<StakedLPInfo>> {
     const { modules } = this.sdk.networkOptions
     const mcData = await this.getMasterChefData()
     const ani = modules.AniAddress
+    const zUSDC = '0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC'
+    // <APT, ANI>
     const pair: CoinPair = {
       coinX: this.sdk.networkOptions.nativeCoin,
-      coinY: modules.AniAddress,
+      coinY: ani,
     }
     const lpCoin = composeLPCoin(modules.ResourceAccountAddress, pair.coinX, pair.coinY)
     const coinInfoTask = this.sdk.resources.fetchAccountResource<AptosCoinInfoResource>(
@@ -264,27 +266,56 @@ export class MasterChefModule implements IModule {
       modules.ResourceAccountAddress,
       composeLP(modules.Scripts, pair.coinX, pair.coinY),
     )
+    // <APT, zUSDC>
+    const pairAPTzUSDC: CoinPair = {
+      coinX: this.sdk.networkOptions.nativeCoin,
+      coinY: zUSDC,
+    }
+    const lpCoinAPTzUSDC = composeLPCoin(modules.ResourceAccountAddress, pairAPTzUSDC.coinX, pairAPTzUSDC.coinY)
+    const coinInfoAPTzUSDCTask = this.sdk.resources.fetchAccountResource<AptosCoinInfoResource>(
+      modules.ResourceAccountAddress,
+      composeType(modules.CoinInfo, [lpCoinAPTzUSDC])
+    )
+    const swapPoolAPTzUSDCTask = this.sdk.resources.fetchAccountResource<SwapPoolResource>(
+      modules.ResourceAccountAddress,
+      composeLP(modules.Scripts, pairAPTzUSDC.coinX, pairAPTzUSDC.coinY),
+    )
+    // pool info
     const aniPoolInfoTask = this.getPoolInfoByCoinType(ani)
     const lpCoinPoolInfoTask = this.getPoolInfoByCoinType(lpCoin)
+    const lpCoinAPTzUSDCPoolInfoTask = this.getPoolInfoByCoinType(lpCoinAPTzUSDC)
 
-    const [coinInfoResponse, swapPoolResponse, aniPoolInfoResponse, lpCoinPoolInfoResponse] =
-      await Promise.all([coinInfoTask, swapPoolTask, aniPoolInfoTask, lpCoinPoolInfoTask])
+    const [coinInfoResponse, swapPoolResponse, aniPoolInfoResponse, lpCoinPoolInfoResponse,
+      coinInfoAPTzUSDCResponse, swapPoolAPTzUSDCResponse, lpCoinAPTzUSDCPoolInfoResponse] =
+      await Promise.all([coinInfoTask, swapPoolTask, aniPoolInfoTask, lpCoinPoolInfoTask,
+        coinInfoAPTzUSDCTask, swapPoolAPTzUSDCTask, lpCoinAPTzUSDCPoolInfoTask])
 
-    if (!coinInfoResponse || !swapPoolResponse || !aniPoolInfoResponse || !lpCoinPoolInfoResponse) {
+    if (!coinInfoResponse || !swapPoolResponse || !aniPoolInfoResponse || !lpCoinPoolInfoResponse
+      || !coinInfoAPTzUSDCResponse || !swapPoolAPTzUSDCResponse || !lpCoinAPTzUSDCPoolInfoResponse) {
       throw new Error('resource not found')
     }
     
     const lpSupply = coinInfoResponse.data.supply.vec[0].integer.vec[0].value // lp total supply
+    const lpSupplyAPTzUSDC = coinInfoAPTzUSDCResponse.data.supply.vec[0].integer.vec[0].value // lp total supply
     const stakedLPCoin = lpCoinPoolInfoResponse.coin_reserve.value  // staked LP Coin amount
     const stakedANI = aniPoolInfoResponse.coin_reserve.value  // staked ANI amount
+    const stakedLPCoinAPTzUSDC = lpCoinAPTzUSDCPoolInfoResponse.coin_reserve.value  // staked LP Coin amount
     // staked lpCoin value equals to ANI amount value
     const lpCoinValue2ANI = d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)).mul(2)
+    const apt2ANI = d(swapPoolResponse.data.coin_y_reserve.value).div(d(swapPoolResponse.data.coin_x_reserve.value))
+    const lpCoinAPTzUSDCValue2ANI = d(stakedLPCoinAPTzUSDC).div(d(lpSupplyAPTzUSDC)).mul(d(swapPoolAPTzUSDCResponse.data.coin_x_reserve.value)).mul(2).mul(apt2ANI)
 
+    // ANI stake only
     const interestANI1 = d(mcData.per_second_ANI).mul(d(aniPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
     const aprANI = interestANI1.div(stakedANI)
 
+    // APT-ANI
     const interestANI2 = d(mcData.per_second_ANI).mul(d(lpCoinPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
     const aprLPCoin = interestANI2.div(lpCoinValue2ANI)
+
+    // APT-zUSDC
+    const interestANI3 = d(mcData.per_second_ANI).mul(d(lpCoinAPTzUSDCPoolInfoResponse.alloc_point)).div(d(mcData.total_alloc_point)).mul(d(100).sub(mcData.dao_percent)).div(d(100)).mul(YEAR_S)
+    const aprLPCoinAPTzUSDC = interestANI3.div(lpCoinAPTzUSDCValue2ANI)
 
     const stakedAniReturn: StakedLPInfo = {
       apr: aprANI,
@@ -300,7 +331,15 @@ export class MasterChefModule implements IModule {
       coinY: d(stakedLPCoin).div(d(lpSupply)).mul(d(swapPoolResponse.data.coin_y_reserve.value)),
     }
 
-    return [stakedAniReturn, stakedLPCoinReturn]
+    const stakedLPCoinAPTzUSDCReturn: StakedLPInfo = {
+      apr: aprLPCoinAPTzUSDC,
+      lpAmount: d(stakedLPCoinAPTzUSDC),
+      lp2AniAmount: d(lpCoinAPTzUSDCValue2ANI),
+      coinX: d(stakedLPCoinAPTzUSDC).div(d(lpSupplyAPTzUSDC)).mul(d(swapPoolAPTzUSDCResponse.data.coin_x_reserve.value)),
+      coinY: d(stakedLPCoinAPTzUSDC).div(d(lpSupplyAPTzUSDC)).mul(d(swapPoolAPTzUSDCResponse.data.coin_y_reserve.value)),
+    }
+
+    return [stakedAniReturn, stakedLPCoinReturn, stakedLPCoinAPTzUSDCReturn]
   }
 
   /**
